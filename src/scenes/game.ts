@@ -1,61 +1,51 @@
 import Phaser from "phaser";
-import { Tile } from "../game/tile";
-import { Board } from "../game/board";
-import { Drag } from "../game/drag";
-import { Human } from "../entities/human";
-import { AI } from "../entities/ai";
-import { Player } from "../entities/player";
+
+import { Board } from "../board";
+import { PointerController } from "../controllers/pointer";
+import { AIController } from "../controllers/ai";
+import { EntityControllerCallbacks } from "../controllers/entity";
+import { Entity } from "../entities/entity";
+import { EntityRenderer } from "../entities/renderer";
+import { TileRenderer } from "../board/tiles/renderer";
+import { ProbabilityMap } from "../math";
+import { RESPONSIVE_CONFIGS, ResponsiveConfig, RESPONSIVE_MIN_SIZE, ResponsiveSize } from "../config/responsive";
+import { GRID_SIZE, LINE_DEPTH as ENTITY_DEPTH, MIN_LINE_LENGTH, UI_DEPTH, MAX_HEALTH } from "../config/game";
+import { TILE_CONFIGS, TileKey } from "../config/tile";
+import { EntityUI } from "../entities/ui";
 
 export class GameScene extends Phaser.Scene {
-    public static readonly BOARD_SIZE = 5;
-
     private board: Board = null as any;
+    private responsiveConfig: ResponsiveConfig = null as any;
 
-    private playerIndex: number = 0;
-    private players: Player[] = [];
+    private entities: Entity[] = [];
+    private entityIndex: number = 0;
 
     public preload() {
-        this.load.image("board", "./assets/boards/5x5.png");
+        const displaySize = Math.min(window.innerWidth, window.innerHeight);
+
+        let keySize: ResponsiveSize = "small";
+        for (let i = 0; i < RESPONSIVE_MIN_SIZE.length; i++) {
+            const [key, size] = RESPONSIVE_MIN_SIZE[i];
+            if (size > displaySize) break;
+
+            keySize = key;
+        }
+
+        this.responsiveConfig = RESPONSIVE_CONFIGS[keySize];        
+
+        this.load.image("board", `./assets/art/boards/${keySize}.png`);
+        this.load.spritesheet("tiles", `./assets/art/tiles/${keySize}.png`, { 
+            frameWidth: this.responsiveConfig.tileSize, 
+            frameHeight: this.responsiveConfig.tileSize 
+        });
+
+        this.load.image("background", "./assets/art/backgrounds/background.jpg");
+        this.load.image("monster", "./assets/art/monsters/monster.png");
 
         this.load.audio("collect", "./assets/sounds/collect.mp3");
         this.load.audio("select", "./assets/sounds/select.mp3");
 
-        Tile.KEYS.forEach(tile => {
-            this.load.image(tile, `./assets/tiles/${tile}.png`);
-        });
-    }
-
-    private dragStart(drag: Drag, x: number, y: number) {
-        drag.start();
-
-        if (this.dragUpdate(drag, x, y, false)) drag.updateStart();
-
-        drag.updateEnd(x, y);
-    }
-
-    private dragStop(drag: Drag, x: number, y: number) {
-        this.dragUpdate(drag, x, y, false, false);
-
-        const points = drag.getPoints();
-        if (points.length >= Board.MIN_LINE_LENGTH) {
-            this.board.match(points);
-            this.board.matchAnimate(points);
-
-            this.players[this.playerIndex].turnEnd();
-
-            setTimeout(() => {
-                this.playerIndex = (this.playerIndex + 1) % this.players.length;
-                this.players[this.playerIndex].turnStart();
-            }, points.length * 200);
-        }
-
-        drag.stop();
-    }
-
-    private dragMove(drag: Drag, x: number, y: number) {
-        if (this.dragUpdate(drag, x, y)) drag.updateStart();
-
-        drag.updateEnd(x, y);
+        // this.load.audio("music", "./assets/music/music.mp3");
     }
 
     private drawCount(x: number, y: number, count: number, fill: number = 0) {
@@ -64,10 +54,11 @@ export class GameScene extends Phaser.Scene {
         let colorHex = fill.toString(16);
         colorHex = new Array(6 - colorHex.length).fill("0").join("") + colorHex;
 
-        const text = this.add.text(x - tileSize.x / 4, y - tileSize.y / 2, `x${count}`, {
+        const text = this.add.text(x, y - tileSize.y / 2, count.toString(), {
             color: `#${colorHex}`,
-            font: "bold 25px Arial"
+            font: `bold ${this.responsiveConfig.textSize}px Arial`
         });
+        text.setDepth(UI_DEPTH);
 
         this.tweens.addCounter({
             from: 0,
@@ -79,97 +70,164 @@ export class GameScene extends Phaser.Scene {
                 text.setAlpha(text.alpha - tween.getValue() * 0.005);
             },
             onComplete: () => {
-                text.destroy(true);
+                text.destroy(false);
             }
         });
     }
 
-    private dragUpdate(drag: Drag, x: number, y: number, limitTileRange: boolean = true, animate: boolean = true) {
-        const actualPoint = new Phaser.Math.Vector2(x, y);
+    private select(entity: Entity, x: number, y: number): boolean {
+        const tile = this.board.getTile(x, y);
+        if (tile === null) return false;
 
-        const gridPoint = this.board.alignPoint(x, y);
-        if (gridPoint === null) return false;
+        const line = entity.getLine();
 
-        const tileSize = this.board.getTileSize();
+        const popPoint = line[line.length - 2];
+        if (popPoint && popPoint.x === x && popPoint.y === y) {
+            entity.popPoint();
 
-        const lastPoint = drag.lastPoint;
-        if (lastPoint) {
-            if (Math.abs(lastPoint.x - gridPoint.x) > tileSize.x) return false;
-            if (Math.abs(lastPoint.y - gridPoint.y) > tileSize.y) return false;
+            tile.select(line.length - 1);
+
+            return true;
         }
 
-        if (limitTileRange) {
-            if (Math.abs(actualPoint.x - gridPoint.x) > tileSize.x / 3) return false;
-            if (Math.abs(actualPoint.y - gridPoint.y) > tileSize.y / 3) return false; 
+        if (entity.containsPoint(x, y)) return false;
+
+        const previousPoint = line[line.length - 1];
+        if (previousPoint) {
+            if (previousPoint.x === x && previousPoint.y === y) return false;
+
+            const previousTile = this.board.getTile(previousPoint.x, previousPoint.y);
+            if (previousTile === null) return false;
+
+            if (!tile.isAdjacent(previousTile)) return false;
+            if (!tile.canMatch(previousTile)) return false;
         }
 
-        const tileId = this.board.getTileId(gridPoint.x, gridPoint.y);
-        if (tileId === null) return false;
+        entity.pushPoint(x, y);
 
-        const previousCount = drag.getPoints().length;
+        const tilePosition = tile.getWorldPosition();
+        this.drawCount(tilePosition.x, tilePosition.y, line.length, entity.getFill());
 
-        if (!drag.update(gridPoint.x, gridPoint.y, tileId)) return false;
-
-        const currentCount = drag.getPoints().length;
-
-        if (animate) {
-            const point = drag.lastPoint;
-            if (point) {
-                const tile = this.board.getTile(point.x, point.y);
-                tile?.selectAnimate(currentCount);
-            }
-
-            if (currentCount > previousCount && currentCount >= Board.MIN_LINE_LENGTH) {
-                this.drawCount(
-                    gridPoint.x, 
-                    gridPoint.y, 
-                    currentCount, 
-                    drag.fill
-                );
-            }
-        }
+        tile.select(line.length - 1);
 
         return true;
     }
 
-    private attachPlayer(player: Player, drag: Drag) {
-        player.onDragStart = (x, y) => this.dragStart(drag, x, y);
-        player.onDragMove = (x, y) => this.dragMove(drag, x, y);
-        player.onDragStop = (x, y) => this.dragStop(drag, x, y);
+    private match(entity: Entity): boolean {
+        const line = entity.getLine();
+
+        let valid = false;
+        if (line.length >= MIN_LINE_LENGTH) {
+            valid = true;
+
+            let tiles = this.board.match(line);
+            let delay = line.length * TileRenderer.MATCH_DELAY + TileRenderer.MATCH_DURATION;
+
+            const entity = this.entities[this.entityIndex];
+            tiles.find(tile => tile !== null)?.performAction(tiles.length, entity, this.entities.filter((other) => other !== entity));
+            
+            this.board.drop(delay);
+            delay += TileRenderer.DROP_TILE_DURATION;
+
+            this.board.fill(delay);
+            delay += TileRenderer.SPAWN_DURATION;
+
+            this.entityIndex = (this.entityIndex + 1) % this.entities.length;
+            this.entities[this.entityIndex].tick(delay);
+        }
+
+        entity.clearPoints();
+        
+        return valid;
     }
 
-    private createHuman(): Human {
-        const drag = new Drag(this, 15 * this.board.scale, Math.floor(Math.random() * 0xFFFFFF));
-        this.add.existing(drag);
-
-        const human = new Human(this);
-        this.attachPlayer(human, drag);
-
-        return human;
+    private makeCallbacks(entity: Entity): EntityControllerCallbacks {
+        return {
+            select: (x, y) => {
+                if (this.entities[this.entityIndex] !== entity) return false;
+                return this.select(entity, x, y);
+            },
+            match: () => {
+                if (this.entities[this.entityIndex] !== entity) return false;
+                return this.match(entity);
+            }
+        };
     }
 
-    private createAI(): AI {
-        const drag = new Drag(this, 15 * this.board.scale, Math.floor(Math.random() * 0xFFFFFF));
-        this.add.existing(drag);
+    private createBoard() {
+        const probabilityMap = new ProbabilityMap<TileKey>();
+        Object.entries(TILE_CONFIGS).forEach(([key, config]) => probabilityMap.set(key as any, config.probability));
 
-        const ai = new AI(this, this.board);
-        this.attachPlayer(ai, drag);
+        const boardSize = this.responsiveConfig.boardSize;
 
-        return ai;
+        this.board = new Board(
+            this, 
+            window.innerWidth * this.responsiveConfig.gridOffset.x - boardSize / 2, 
+            window.innerHeight * this.responsiveConfig.gridOffset.y - boardSize / 2, 
+            {
+                probabilityMap,
+                gridSize: new Phaser.Math.Vector2(GRID_SIZE, GRID_SIZE)
+            }
+        );
+        this.add.existing(this.board);
+    }
+
+    private createEntity(fill: number): Entity {
+        const entity = new Entity(this, {
+            health: MAX_HEALTH,
+            defense: 0,
+            strength: 0,
+            board: this.board,
+            stroke: this.responsiveConfig.stroke,
+            fill
+        });
+        entity.addRenderer(new EntityRenderer(entity));
+        this.add.existing(entity);
+
+        return entity;
+    }
+
+    private createEntities() {
+        const player = this.createEntity(0x880088);
+        player.addController(new PointerController(player, this.makeCallbacks(player)));
+
+        const playerUI = new EntityUI(
+            player,
+            window.innerWidth * this.responsiveConfig.gridOffset.x - this.responsiveConfig.boardSize / 2,
+            window.innerHeight * this.responsiveConfig.gridOffset.y + this.responsiveConfig.boardSize / 2 + this.responsiveConfig.tileSize / 2
+        );
+        this.add.existing(playerUI);
+
+        const ai = this.createEntity(0xFF0000);
+        ai.addController(new AIController(ai, this.makeCallbacks(ai)));
+
+        const aiUI = new EntityUI(
+            ai, 
+            window.innerWidth * this.responsiveConfig.monsterOffset.x - this.responsiveConfig.boardSize / 2,
+            window.innerHeight * this.responsiveConfig.monsterOffset.y + this.responsiveConfig.boardSize / 2 + this.responsiveConfig.tileSize / 2
+        );
+        this.add.existing(aiUI);
+
+        this.entities.push(player, ai);
+        this.entities.forEach(entity => entity.setDepth(ENTITY_DEPTH));
     }
 
     public create() {
-        const scale = window.innerWidth > 1280 ? 1 : 0.5;
+        const background = this.add.image(window.innerWidth / 2, window.innerHeight / 2, "background");
+        background.scale = 0.8;
 
-        this.board = new Board(this, window.innerWidth / 2 - 320 * scale, window.innerHeight / 2 - 320 * scale, GameScene.BOARD_SIZE);
-        this.board.setScale(scale);
-        this.add.existing(this.board);
+        const monster = this.add.image(window.innerWidth * this.responsiveConfig.monsterOffset.x, window.innerHeight * this.responsiveConfig.monsterOffset.y, "monster");
+        monster.scale = this.responsiveConfig.name === "small" ? 0.5 : 1;
+        monster.flipX = true;
 
-        this.players.push(
-            this.createHuman(),
-            this.createAI()
-        );
+        // this.sound.play("music", {
+        //     volume: 0.05,
+        //     loop: true
+        // });
 
-        this.players[0].turnStart();
+        this.createBoard();
+        this.createEntities();
+
+        this.entities[0]?.tick(0);
     }
 }
