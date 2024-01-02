@@ -2,7 +2,10 @@ import "./style.css";
 
 import Phaser from "phaser";
 
-import { GameScene } from "./scenes/game";
+import { DesktopGameScene } from "./scenes/game/desktop";
+import { MobileGameScene } from "./scenes/game/mobile";
+
+const GameScene = Math.min(window.innerWidth, window.innerHeight) < 800 ? MobileGameScene : DesktopGameScene;
 
 document.addEventListener("DOMContentLoaded", () => {
     new Phaser.Game({
