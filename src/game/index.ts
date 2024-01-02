@@ -1,4 +1,4 @@
-import { MAX_HEALTH, MIN_LINE_LENGTH } from "./config";
+import { MAX_HEALTH } from "./config";
 import { TILE_CONFIGS } from "./tile";
 import { Board } from "../engine/board";
 import { Entity } from "../engine/entities";
