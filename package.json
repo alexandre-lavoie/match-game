@@ -1,21 +1,20 @@
 {
-  "name": "match-game",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "match-game-workspace",
+  "workspaces": [
+    "engine",
+    "games/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "package": "cd dist && zip -r dist.zip * && cd ..",
-    "preview": "vite preview",
+    "dev": "concurrently --raw --handle-input \"npm:dev:engine\" \"npm:dev:game\"",
+    "build": "npm run build:engine && npm run build:game",
+    "dev:engine": "npm run dev -w engine",
+    "build:engine": "npm run build -w engine",
+    "dev:game": "npm run dev -w games/fight",
+    "build:game": "npm run build -w games/fight",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
-    "prettier": "^3.1.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.8"
-  },
-  "dependencies": {
-    "phaser": "^3.70.0"
+    "concurrently": "^8.2.2",
+    "prettier": "^3.1.1"
   }
 }

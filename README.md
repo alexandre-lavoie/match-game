@@ -14,11 +14,16 @@ npm install
 npm run dev
 ```
 
+### Formatting
+
+```
+npm run format
+```
+
 ### Build
 
 ```
 npm run build
-npm run package
 ```
 
 ## Docs
