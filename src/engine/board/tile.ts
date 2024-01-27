@@ -1,3 +1,8 @@
+import type { Board } from ".";
+
+/**
+ * A simple data object for {@link Board} tiles.
+ */
 export class Tile {
   public readonly key: number;
 

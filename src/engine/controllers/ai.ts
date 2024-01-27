@@ -3,10 +3,25 @@ import { Controller } from ".";
 import { Entity } from "../entities";
 import { AI } from "../ai";
 
+/**
+ * Controller for {@link AI}.
+ *
+ * Uses tweens to simulate a player dragging tiles.
+ */
 export class AIController extends Controller {
+  /**
+   * Time in ms to spend dragging between tiles.
+   */
   public static readonly TILE_DURATION = 200;
+
+  /**
+   * Time in ms to wait until starting to play move for turn.
+   */
   public static readonly PLAY_DELAY = 100;
 
+  /**
+   * Brain of the {@link AIController}.
+   */
   private readonly ai: AI;
 
   public constructor(scene: Phaser.Scene, entity: Entity, ai: AI) {

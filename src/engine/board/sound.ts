@@ -1,6 +1,10 @@
 import Phaser from "phaser";
+import type { Board } from ".";
 import { BoardRenderer } from "./renderer";
 
+/**
+ * Sound for {@link Board}
+ */
 export class BoardSound extends Phaser.GameObjects.Container {
   private boardRenderer: BoardRenderer;
 
@@ -17,13 +21,19 @@ export class BoardSound extends Phaser.GameObjects.Container {
       .onCollect(this.collect, this);
   }
 
-  protected select(_x: number, _y: number, offset: number) {
+  /**
+   * Sound for {@link Board.select}.
+   */
+  protected select(_x: number, _y: number, offset: number): void {
     this.scene.sound.play("select", {
       rate: 1 + offset * 0.1,
     });
   }
 
-  protected collect(_x: number, _y: number, offset: number) {
+  /**
+   * Sound for {@link Board.match}.
+   */
+  protected collect(_x: number, _y: number, offset: number): void {
     this.scene.sound.play("collect", {
       rate: 1 + offset * 0.1,
     });

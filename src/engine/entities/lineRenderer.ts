@@ -2,6 +2,9 @@ import Phaser from "phaser";
 import { PointLine } from "../gfx/line";
 import { Entity } from ".";
 
+/**
+ * Renderer for {@link Entity.line}.
+ */
 export class EntityLineRenderer extends Phaser.GameObjects.Container {
   private entity: Entity;
   private line: PointLine;
@@ -35,7 +38,13 @@ export class EntityLineRenderer extends Phaser.GameObjects.Container {
       .onClearPoints(this.clearPoints, this);
   }
 
-  protected drawCount(x: number, y: number) {
+  /**
+   * Draw current length of {@link line} at {@link x}, {@link y} coordinate.
+   *
+   * @param x coordinate.
+   * @param y coordinate.
+   */
+  protected drawCount(x: number, y: number): void {
     let colorHex = this.fill.toString(16);
     colorHex = new Array(6 - colorHex.length).fill("0").join("") + colorHex;
 
@@ -66,7 +75,10 @@ export class EntityLineRenderer extends Phaser.GameObjects.Container {
     });
   }
 
-  protected pushPoint(x: number, y: number) {
+  /**
+   * Renderer for {@link Entity.pushPoint}.
+   */
+  protected pushPoint(x: number, y: number): void {
     const boardRenderer = this.entity.getGame().getBoardRenderer();
 
     const worldPosition = boardRenderer.getGridToWorld(x, y);
@@ -80,11 +92,17 @@ export class EntityLineRenderer extends Phaser.GameObjects.Container {
     );
   }
 
-  protected popPoint() {
+  /**
+   * Renderer for {@link Entity.popPoint}.
+   */
+  protected popPoint(): void {
     this.line.popPoint();
   }
 
-  protected clearPoints() {
+  /**
+   * Renderer for {@link Entity.clearPoints}.
+   */
+  protected clearPoints(): void {
     this.line.clearPoints();
   }
 }

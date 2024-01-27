@@ -1,7 +1,19 @@
 import { AI } from ".";
 import { Entity } from "../entities";
 
+/**
+ * An implementation of AI that uses a greedy breath-first search to determine the longest lines per tile type.
+ */
 export class PathAI extends AI {
+  /**
+   * Calculate the best line based on the longest paths per tile.
+   *
+   * DO OVERRIDE this method to implement your own AI logic based on longest lines.
+   *
+   * @param _entity to calculate line for.
+   * @param tileLongestPath map between a tile index and the longest line found for that tile index.
+   * @returns list of points that defines the line.
+   */
   protected lineFromTileKeyLongestPath(
     _entity: Entity,
     tileLongestPath: Record<number, Phaser.Math.Vector2[]>
@@ -33,6 +45,14 @@ export class PathAI extends AI {
     return this.lineFromTileKeyLongestPath(entity, tileLongestPath);
   }
 
+  /**
+   * Search for the longest path at {@link x}, {@link y}.
+   *
+   * @param entity to apply search on. Mosly only used to access the game state.
+   * @param x coordinate.
+   * @param y coordinate.
+   * @returns list of points that defines the line. An empty list implies that no path was found.
+   */
   private searchPath(
     entity: Entity,
     x: number,
