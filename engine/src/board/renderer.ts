@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 
-import { Board, BoardTile } from "./board";
 import { EmitterContext } from "../types";
+import { Board, BoardTile } from "./board";
 
 export type BoardTileSprite = Phaser.GameObjects.Sprite | null;
 

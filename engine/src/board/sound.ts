@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+
 import type { Board } from "./board";
 import { BoardRenderer } from "./renderer";
 

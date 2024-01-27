@@ -1,9 +1,8 @@
-import "./style.css";
-
 import Phaser from "phaser";
 
 import { DesktopGameScene } from "./scenes/game/desktop";
 import { MobileGameScene } from "./scenes/game/mobile";
+import "./style.css";
 
 const GameScene =
   Math.min(window.innerWidth, window.innerHeight) < 800

@@ -1,6 +1,7 @@
+import { Entity, Match } from "match-game";
+
 import { MAX_HEALTH, MIN_LINE_LENGTH } from "./config";
 import { TILE_KEYS, TileKey } from "./tile";
-import { Entity, Match } from "match-game";
 
 export class SameTypeMatch extends Match {
   public canAdd(

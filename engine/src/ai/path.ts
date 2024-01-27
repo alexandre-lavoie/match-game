@@ -1,5 +1,5 @@
-import { AI } from "./ai";
 import { Entity } from "../entities/entity";
+import { AI } from "./ai";
 
 /**
  * An implementation of AI that uses a greedy breath-first search to determine the longest lines per tile type.

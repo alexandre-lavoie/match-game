@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 
-import { Controller } from "./controller";
 import { Entity } from "../entities/entity";
+import { Controller } from "./controller";
 
 /**
  * Controller for mouse and touch screens.

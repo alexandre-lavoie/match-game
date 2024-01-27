@@ -1,7 +1,8 @@
 import Phaser from "phaser";
-import { Controller } from "./controller";
-import { Entity } from "../entities/entity";
+
 import { AI } from "../ai/ai";
+import { Entity } from "../entities/entity";
+import { Controller } from "./controller";
 
 /**
  * Controller for {@link AI}.

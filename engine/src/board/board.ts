@@ -1,10 +1,10 @@
 import Phaser from "phaser";
-import { Game } from "../game/game";
-import { Tile } from "./tile";
-import { EmitterContext } from "../types";
 
+import { Game } from "../game/game";
+import { EmitterContext } from "../types";
 import type { BoardRenderer } from "./renderer";
 import type { BoardSound } from "./sound";
+import { Tile } from "./tile";
 
 /**
  * Tile placed on board.

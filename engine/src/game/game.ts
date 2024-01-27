@@ -1,10 +1,10 @@
 import { Board } from "../board/board";
 import { BoardRenderer } from "../board/renderer";
+import { Controller } from "../controllers/controller";
 import { Entity } from "../entities/entity";
 import { ProbabilityMap } from "../math/probabilityMap";
-import { Controller } from "../controllers/controller";
-import { Match } from "./match";
 import { EmitterContext } from "../types";
+import { Match } from "./match";
 
 /**
  * Game is the main data/logic manager for your game.

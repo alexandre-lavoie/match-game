@@ -1,14 +1,15 @@
-import Phaser from "phaser";
 import {
-  PointerController,
-  BoardSound,
   AIController,
   BoardRenderer,
+  BoardSound,
   EntityLineRenderer,
   EntityValueRenderer,
+  PointerController,
 } from "match-game";
-import { FightGame } from "../../game";
+import Phaser from "phaser";
+
 import { FightAI } from "../../ai";
+import { FightGame } from "../../game";
 
 export abstract class GameScene extends Phaser.Scene {
   public static readonly PLAYER_COLOR = 0xff0000;

@@ -1,8 +1,7 @@
-import { Game } from "./game";
-import { Entity } from "../entities/entity";
-
 import type { Board } from "../board/board";
 import type { Tile } from "../board/tile";
+import { Entity } from "../entities/entity";
+import { Game } from "./game";
 
 /**
  * An abstraction of a rule to define how to combine {@link Tile}s on a {@link Board} using a line and what effects are added if this rule is achieved.

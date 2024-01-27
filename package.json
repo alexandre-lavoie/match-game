@@ -14,6 +14,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "concurrently": "^8.2.2",
     "prettier": "^3.1.1"
   }

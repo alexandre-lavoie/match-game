@@ -1,9 +1,8 @@
-import { MAX_HEALTH } from "./config";
-import { TILE_CONFIGS } from "./tile";
-
 import { Board, Entity, Game, ProbabilityMap } from "match-game";
 
+import { MAX_HEALTH } from "./config";
 import { SameTypeMatch } from "./match";
+import { TILE_CONFIGS } from "./tile";
 
 export class FightGame extends Game {
   public constructor() {

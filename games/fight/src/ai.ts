@@ -1,7 +1,7 @@
+import { Entity, PathAI } from "match-game";
+
 import { MAX_HEALTH } from "./config";
 import { TILE_KEYS, TileKey } from "./tile";
-
-import { PathAI, Entity } from "match-game";
 
 export class FightAI extends PathAI {
   protected lineFromTileKeyLongestPath(

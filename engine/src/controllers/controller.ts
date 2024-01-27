@@ -1,8 +1,7 @@
 import Phaser from "phaser";
 
-import type { Game } from "../game/game";
-
 import { Entity } from "../entities/entity";
+import type { Game } from "../game/game";
 import { EmitterContext } from "../types";
 
 /**

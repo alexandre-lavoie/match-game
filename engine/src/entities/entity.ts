@@ -2,7 +2,6 @@ import Phaser from "phaser";
 
 import { Game } from "../game/game";
 import { EmitterContext } from "../types";
-
 import type { EntityLineRenderer } from "./lineRenderer";
 import type { EntityValueRenderer } from "./valueRenderer";
 

@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 
-import { Entity } from "../entities/entity";
 import type { AIController } from "../controllers/ai";
+import { Entity } from "../entities/entity";
 
 /**
  * An abstraction to implement artifical intelligence.
