@@ -1,12 +1,14 @@
 # Match Game
 
-## Getting Started
+Match Game is a Phaser game engine to make line matching games. It allows a variety of game line matching games, from 3+ in a row, to different tiles.
+
+## Quick Start
 
 ```
 npm install
 ```
 
-### Dev
+### Development
 
 ```
 npm run dev
@@ -19,14 +21,6 @@ npm run build
 npm run package
 ```
 
-## TODOs
+## Docs
 
-### Weapon Selection
-
-We should have N weapons to select from.
-
-### Attack Formula
-
-```
-match length * (my strength / other defense) * (my agility / other agility)
-```
+- [Engine Overview](./docs/engine.md)

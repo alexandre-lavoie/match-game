@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import { Entity } from ".";
 
+/**
+ * Debug renderer for {@link Entity.config}.
+ */
 export class EntityValueRenderer extends Phaser.GameObjects.Container {
   private entity: Entity;
   private text: Phaser.GameObjects.Text;
