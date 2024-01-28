@@ -11,7 +11,9 @@ import { EmitterContext } from "../types";
  *
  * NOTE: Logic can be created to use "fake input device" (like for an AI).
  */
-export abstract class Controller extends Phaser.GameObjects.GameObject {
+export abstract class Controller<
+  TValueKey extends string = string,
+> extends Phaser.GameObjects.GameObject {
   /**
    * Event emitter for {@link Controller}.
    *
@@ -23,9 +25,9 @@ export abstract class Controller extends Phaser.GameObjects.GameObject {
   /**
    * {@link Entity} attached to this {@link Controller}.
    */
-  protected entity: Entity;
+  protected entity: Entity<TValueKey>;
 
-  public constructor(scene: Phaser.Scene, entity: Entity) {
+  public constructor(scene: Phaser.Scene, entity: Entity<TValueKey>) {
     super(scene, "controller");
 
     this.entity = entity;
@@ -34,7 +36,7 @@ export abstract class Controller extends Phaser.GameObjects.GameObject {
   /**
    * Get {@link entity}.
    */
-  public getEntity(): Entity {
+  public getEntity(): Entity<TValueKey> {
     return this.entity;
   }
 
@@ -66,7 +68,17 @@ export abstract class Controller extends Phaser.GameObjects.GameObject {
     callback: (x: number, y: number) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("select", callback, context);
+    return this.onWrap("select", callback, context);
+  }
+
+  /**
+   * Remove {@link onSelect}.
+   */
+  public offSelect(
+    callback: (x: number, y: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("select", callback, context);
   }
 
   /**
@@ -84,15 +96,32 @@ export abstract class Controller extends Phaser.GameObjects.GameObject {
    * @returns This for chaining.
    */
   public onMatch(callback: () => void, context?: EmitterContext): this {
-    return this.callbackWrap("match", callback, context);
+    return this.onWrap("match", callback, context);
   }
 
-  private callbackWrap<T extends (...args: any[]) => void>(
+  /**
+   * Remove {@link onMatch}.
+   */
+  public offMatch(callback: () => void, context?: EmitterContext): this {
+    return this.offWrap("match", callback, context);
+  }
+
+  private onWrap<T extends (...args: any[]) => void>(
     key: string,
     callback: T,
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private offWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.off(key, callback, context);
 
     return this;
   }

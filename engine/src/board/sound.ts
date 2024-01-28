@@ -6,10 +6,14 @@ import { BoardRenderer } from "./renderer";
 /**
  * Sound for {@link Board}
  */
-export class BoardSound extends Phaser.GameObjects.Container {
-  private boardRenderer: BoardRenderer;
+export class BoardSound<TValueKey extends string = string> extends Phaser
+  .GameObjects.Container {
+  private boardRenderer: BoardRenderer<TValueKey>;
 
-  public constructor(scene: Phaser.Scene, boardRenderer: BoardRenderer) {
+  public constructor(
+    scene: Phaser.Scene,
+    boardRenderer: BoardRenderer<TValueKey>
+  ) {
     super(scene);
 
     this.boardRenderer = boardRenderer;
@@ -20,6 +24,18 @@ export class BoardSound extends Phaser.GameObjects.Container {
     this.boardRenderer
       .onSelect(this.select, this)
       .onCollect(this.collect, this);
+  }
+
+  private removeCallbacks() {
+    this.boardRenderer
+      .offSelect(this.select, this)
+      .offCollect(this.collect, this);
+  }
+
+  protected preDestroy(): void {
+    this.removeCallbacks();
+
+    super.preDestroy();
   }
 
   /**

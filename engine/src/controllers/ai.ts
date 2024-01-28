@@ -9,7 +9,9 @@ import { Controller } from "./controller";
  *
  * Uses tweens to simulate a player dragging tiles.
  */
-export class AIController extends Controller {
+export class AIController<
+  TValueKey extends string = string,
+> extends Controller<TValueKey> {
   /**
    * Time in ms to spend dragging between tiles.
    */
@@ -23,9 +25,13 @@ export class AIController extends Controller {
   /**
    * Brain of the {@link AIController}.
    */
-  private readonly ai: AI;
+  private readonly ai: AI<TValueKey>;
 
-  public constructor(scene: Phaser.Scene, entity: Entity, ai: AI) {
+  public constructor(
+    scene: Phaser.Scene,
+    entity: Entity<TValueKey>,
+    ai: AI<TValueKey>
+  ) {
     super(scene, entity);
 
     this.ai = ai;

@@ -8,7 +8,8 @@ export type BoardTileSprite = Phaser.GameObjects.Sprite | null;
 /**
  * Renderer for {@link Board}
  */
-export class BoardRenderer extends Phaser.GameObjects.Container {
+export class BoardRenderer<TValueKey extends string = string> extends Phaser
+  .GameObjects.Container {
   /**
    * Event emitter for {@link BoardRenderer}.
    *
@@ -17,7 +18,7 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
   protected readonly eventEmitter: Phaser.Events.EventEmitter =
     new Phaser.Events.EventEmitter();
 
-  protected board: Board;
+  protected board: Board<TValueKey>;
 
   protected boardSprite: Phaser.GameObjects.Sprite;
   protected tileSprites: BoardTileSprite[][];
@@ -36,7 +37,12 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
    */
   private animationDelay: number = 0;
 
-  public constructor(scene: Phaser.Scene, board: Board, x: number, y: number) {
+  public constructor(
+    scene: Phaser.Scene,
+    board: Board<TValueKey>,
+    x: number,
+    y: number
+  ) {
     super(scene, x, y);
 
     this.board = board;
@@ -56,9 +62,26 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
     this.board
       .onMatch(this.match, this)
       .onSelect(this.select, this)
-      .onClearLine(this.clearLine, this)
+      .onClear(this.clear, this)
       .onPull(this.pull, this)
-      .onFill(this.fill, this);
+      .onFill(this.fill, this)
+      .onReset(this.reset, this);
+  }
+
+  private removeCallbacks() {
+    this.board
+      .offMatch(this.match, this)
+      .offSelect(this.select, this)
+      .offClear(this.clear, this)
+      .offPull(this.pull, this)
+      .offFill(this.fill, this)
+      .offReset(this.reset, this);
+  }
+
+  protected preDestroy(): void {
+    this.removeCallbacks();
+
+    super.preDestroy();
   }
 
   /**
@@ -196,7 +219,17 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
     callback: (x: number, y: number, offset: number) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("select", callback, context);
+    return this.onWrap("select", callback, context);
+  }
+
+  /**
+   * Remove {@link onSelect}.
+   */
+  public offSelect(
+    callback: (x: number, y: number, offset: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("select", callback, context);
   }
 
   /**
@@ -210,7 +243,17 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
     callback: (x: number, y: number, offset: number) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("collect", callback, context);
+    return this.onWrap("collect", callback, context);
+  }
+
+  /**
+   * Remove {@link onCollect}.
+   */
+  public offCollect(
+    callback: (x: number, y: number, offset: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("collect", callback, context);
   }
 
   /**
@@ -249,7 +292,7 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
   /**
    * Renderer for {@link Board.clearLineX} and {@link Board.clearLineY}.
    */
-  protected clearLine(points: [number, number][]): void {
+  protected clear(points: [number, number][]): void {
     if (points.length === 0) return;
 
     const animationDuration = 200;
@@ -346,6 +389,20 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Renderer for {@link reset}.
+   */
+  protected reset(): void {
+    for (let x = 0; x < this.tileSprites.length; x++) {
+      for (let y = 0; y < this.tileSprites[x].length; y++) {
+        const tileSprite = this.tileSprites[x][y];
+
+        this.tileSprites[x][y] = this.makeTileSprite(this.board.getTile(x, y));
+        if (tileSprite) tileSprite.destroy();
+      }
+    }
+  }
+
+  /**
    * Create the background grid sprite for {@link Board}.
    */
   protected makeBoardSprite(): Phaser.GameObjects.Sprite {
@@ -384,12 +441,22 @@ export class BoardRenderer extends Phaser.GameObjects.Container {
       .map((col, _x) => col.map((tile, _y) => this.makeTileSprite(tile)));
   }
 
-  private callbackWrap<T extends (...args: any[]) => void>(
+  private onWrap<T extends (...args: any[]) => void>(
     key: string,
     callback: T,
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private offWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.off(key, callback, context);
 
     return this;
   }

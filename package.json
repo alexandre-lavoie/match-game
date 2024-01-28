@@ -9,8 +9,8 @@
     "build": "npm run build:engine && npm run build:game",
     "dev:engine": "npm run dev -w engine",
     "build:engine": "npm run build -w engine",
-    "dev:game": "npm run dev -w games/fight",
-    "build:game": "npm run build -w games/fight",
+    "dev:game": "npm run dev -w games/sample",
+    "build:game": "npm run build -w games/sample",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {

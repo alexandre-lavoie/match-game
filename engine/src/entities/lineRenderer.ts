@@ -6,8 +6,10 @@ import { Entity } from "./entity";
 /**
  * Renderer for {@link Entity.line}.
  */
-export class EntityLineRenderer extends Phaser.GameObjects.Container {
-  private entity: Entity;
+export class EntityLineRenderer<
+  TValueKey extends string = string,
+> extends Phaser.GameObjects.Container {
+  private entity: Entity<TValueKey>;
   private line: PointLine;
 
   private fill: number;
@@ -15,7 +17,7 @@ export class EntityLineRenderer extends Phaser.GameObjects.Container {
 
   public constructor(
     scene: Phaser.Scene,
-    entity: Entity,
+    entity: Entity<TValueKey>,
     stroke: number,
     fill: number,
     fontSize: number
@@ -37,6 +39,19 @@ export class EntityLineRenderer extends Phaser.GameObjects.Container {
       .onPushPoint(this.pushPoint, this)
       .onPopPoint(this.popPoint, this)
       .onClearPoints(this.clearPoints, this);
+  }
+
+  private removeCallbacks() {
+    this.entity
+      .offPushPoint(this.pushPoint, this)
+      .offPopPoint(this.popPoint, this)
+      .offClearPoints(this.clearPoints, this);
+  }
+
+  protected preDestroy(): void {
+    this.removeCallbacks();
+
+    super.preDestroy();
   }
 
   /**

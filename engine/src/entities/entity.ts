@@ -9,9 +9,9 @@ import type { EntityValueRenderer } from "./valueRenderer";
  * A collection of game values and a match line.
  *
  * @see {@link EntityLineRenderer} for {@link line} renderer.
- * @see {@link EntityValueRenderer} for {@link config} debug renderer.
+ * @see {@link EntityValueRenderer} for {@link values} debug renderer.
  */
-export class Entity {
+export class Entity<TValueKey extends string = string> {
   /**
    * Event emitter for {@link Entity}.
    *
@@ -20,21 +20,21 @@ export class Entity {
   protected readonly eventEmitter: Phaser.Events.EventEmitter =
     new Phaser.Events.EventEmitter();
 
-  protected game: Game;
+  protected game: Game<TValueKey>;
 
   /**
    * Map of values.
    */
-  protected config: Record<string, number>;
+  protected values: Record<TValueKey, number>;
 
   /**
    * Line used for match.
    */
   protected line: Phaser.Geom.Polygon;
 
-  public constructor(game: Game, config: Record<string, number>) {
+  public constructor(game: Game<TValueKey>, values: Record<TValueKey, number>) {
     this.game = game;
-    this.config = config;
+    this.values = values;
     this.line = new Phaser.Geom.Polygon();
     this.eventEmitter = new Phaser.Events.EventEmitter();
   }
@@ -42,50 +42,61 @@ export class Entity {
   /**
    * Get {@link game}.
    */
-  public getGame(): Game {
+  public getGame(): Game<TValueKey> {
     return this.game;
   }
 
   /**
-   * Get value of a key in {@link config}.
+   * Get value of a key in {@link values}.
    */
-  public getValue(key: string): number {
-    return this.config[key];
+  public getValue(key: TValueKey): number {
+    return this.values[key];
   }
 
   /**
-   * Get {@link config}.
+   * Get {@link values}.
    */
-  public getConfig(): Record<string, number> {
-    return this.config;
+  public getValues(): Record<TValueKey, number> {
+    return this.values;
   }
 
   /**
-   * Set value of a key in {@link config}.
+   * Set value of a key in {@link values}.
    */
-  public setValue(key: string, value: number): void {
-    this.config[key] = value;
+  public setValue(key: TValueKey, value: number): void {
+    this.values[key] = value;
     this.eventEmitter.emit("valueChange", key, value);
   }
 
   /**
    * Event listener for {@link setValue}.
    *
-   * @param key Key in {@link config} to listen changes for.
+   * @param key Key in {@link values} to listen changes for.
    * @param callback Function to call on {@link setValue}.
    * @param context Context to run function in.
    * @returns This for chaining.
    */
   public onValueChange(
-    key: string,
+    key: TValueKey,
     callback: (value: number) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap(
+    return this.onWrap(
       "valueChange",
-      (otherKey: string, value: number) => key === otherKey && callback(value),
+      (otherKey: TValueKey, value: number) =>
+        key === otherKey && callback(value),
       context
     );
+  }
+
+  public offValueChange(
+    _key: TValueKey,
+    _callback: (value: number) => void,
+    _context?: EmitterContext
+  ): this {
+    // TODO: Change onValueChange or figure a way to do this.
+
+    return this;
   }
 
   /**
@@ -110,7 +121,17 @@ export class Entity {
     callback: (x: number, y: number) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("pushPoint", callback, context);
+    return this.onWrap("pushPoint", callback, context);
+  }
+
+  /**
+   * Remove {@link onPushPoint}.
+   */
+  public offPushPoint(
+    callback: (x: number, y: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("pushPoint", callback, context);
   }
 
   /**
@@ -131,7 +152,14 @@ export class Entity {
    * @returns This for chaining.
    */
   public onPopPoint(callback: () => void, context: EmitterContext): this {
-    return this.callbackWrap("popPoint", callback, context);
+    return this.onWrap("popPoint", callback, context);
+  }
+
+  /**
+   * Remove {@link onPopPoint}.
+   */
+  public offPopPoint(callback: () => void, context: EmitterContext): this {
+    return this.offWrap("popPoint", callback, context);
   }
 
   /**
@@ -150,7 +178,14 @@ export class Entity {
    * @returns This for chaining.
    */
   public onClearPoints(callback: () => void, context?: EmitterContext): this {
-    return this.callbackWrap("clearPoints", callback, context);
+    return this.onWrap("clearPoints", callback, context);
+  }
+
+  /**
+   * Remove {@link onClearPoints}.
+   */
+  public offClearPoints(callback: () => void, context?: EmitterContext): this {
+    return this.offWrap("clearPoints", callback, context);
   }
 
   /**
@@ -171,12 +206,22 @@ export class Entity {
     return this.line.points;
   }
 
-  private callbackWrap<T extends (...args: any[]) => void>(
+  private onWrap<T extends (...args: any[]) => void>(
     key: string,
     callback: T,
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private offWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.off(key, callback, context);
 
     return this;
   }

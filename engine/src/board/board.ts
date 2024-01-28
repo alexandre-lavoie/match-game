@@ -18,7 +18,7 @@ export type BoardTile = Tile | null;
  * @see {@link BoardRenderer} for renderer
  * @see {@link BoardSound} for sound
  */
-export class Board {
+export class Board<TValueKey extends string = string> {
   /**
    * Event emitter for the board.
    *
@@ -27,10 +27,10 @@ export class Board {
   protected readonly eventEmitter: Phaser.Events.EventEmitter =
     new Phaser.Events.EventEmitter();
 
-  private game: Game;
+  private game: Game<TValueKey>;
   private tiles: BoardTile[][];
 
-  public constructor(game: Game, size: number) {
+  public constructor(game: Game<TValueKey>, size: number) {
     this.game = game;
     this.tiles = this.makeGrid(size);
   }
@@ -38,7 +38,7 @@ export class Board {
   /**
    * Get {@link Game}.
    */
-  public getGame(): Game {
+  public getGame(): Game<TValueKey> {
     return this.game;
   }
 
@@ -110,7 +110,17 @@ export class Board {
     callback: (x: number, y: number, offset: number) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("select", callback, context);
+    return this.onWrap("select", callback, context);
+  }
+
+  /**
+   * Remove {@link onSelect}.
+   */
+  public offSelect(
+    callback: (x: number, y: number, offset: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("select", callback, context);
   }
 
   /**
@@ -143,7 +153,17 @@ export class Board {
     callback: (points: [number, number][]) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("match", callback, context);
+    return this.onWrap("match", callback, context);
+  }
+
+  /**
+   * Remove {@link onMatch}.
+   */
+  public offMatch(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("match", callback, context);
   }
 
   /**
@@ -224,7 +244,17 @@ export class Board {
     callback: (moves: [number, number, number, number][]) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("pull", callback, context);
+    return this.onWrap("pull", callback, context);
+  }
+
+  /**
+   * Remove {@link onPull}.
+   */
+  public offPull(
+    callback: (moves: [number, number, number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("pull", callback, context);
   }
 
   /**
@@ -242,7 +272,7 @@ export class Board {
       points.push([x, i]);
     }
 
-    this.eventEmitter.emit("clearLine", points);
+    this.eventEmitter.emit("clear", points);
   }
 
   /**
@@ -260,7 +290,7 @@ export class Board {
       points.push([i, y]);
     }
 
-    this.eventEmitter.emit("clearLine", points);
+    this.eventEmitter.emit("clear", points);
   }
 
   /**
@@ -270,11 +300,21 @@ export class Board {
    * @param context Context to run function in.
    * @returns This for chaining.
    */
-  public onClearLine(
+  public onClear(
     callback: (points: [number, number][]) => void,
     context?: EmitterContext
   ): this {
-    return this.callbackWrap("clearLine", callback, context);
+    return this.onWrap("clear", callback, context);
+  }
+
+  /**
+   * Remove {@link onClear}.
+   */
+  public offClear(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("clear", callback, context);
   }
 
   /**
@@ -305,15 +345,72 @@ export class Board {
     callback: (points: [number, number][]) => void,
     context: EmitterContext
   ): this {
-    return this.callbackWrap("fill", callback, context);
+    return this.onWrap("fill", callback, context);
   }
 
-  private callbackWrap<T extends (...args: any[]) => void>(
+  /**
+   * Remove {@link onFill}.
+   */
+  public offFill(
+    callback: (points: [number, number][]) => void,
+    context: EmitterContext
+  ): this {
+    return this.offWrap("fill", callback, context);
+  }
+
+  /**
+   * Clear all tiles and replace with new tiles.
+   */
+  public reset(): void {
+    for (let x = 0; x < this.tiles.length; x++) {
+      for (let y = 0; y < this.tiles.length; y++) {
+        this.tiles[x][y] = this.makeTile(x, y);
+      }
+    }
+
+    this.eventEmitter.emit("reset");
+  }
+
+  /**
+   * Event listener for {@link reset}
+   *
+   * @param callback Function to call on {@link reset}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onReset(
+    callback: (points: [number, number][]) => void,
+    context: EmitterContext
+  ): this {
+    return this.onWrap("reset", callback, context);
+  }
+
+  /**
+   * Remove {@link onReset}.
+   */
+  public offReset(
+    callback: (points: [number, number][]) => void,
+    context: EmitterContext
+  ): this {
+    return this.offWrap("reset", callback, context);
+  }
+
+  private onWrap<T extends (...args: any[]) => void>(
     key: string,
     callback: T,
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private offWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.off(key, callback, context);
 
     return this;
   }

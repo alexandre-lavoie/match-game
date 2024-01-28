@@ -4,7 +4,7 @@ import { AI } from "./ai";
 /**
  * An implementation of AI that uses a greedy breath-first search to determine the longest lines per tile type.
  */
-export class PathAI extends AI {
+export class PathAI<TValueKey extends string = string> extends AI<TValueKey> {
   /**
    * Calculate the best line based on the longest paths per tile.
    *
@@ -15,7 +15,7 @@ export class PathAI extends AI {
    * @returns list of points that defines the line.
    */
   protected lineFromTileKeyLongestPath(
-    _entity: Entity,
+    _entity: Entity<TValueKey>,
     tileLongestPath: Record<number, Phaser.Math.Vector2[]>
   ): Phaser.Math.Vector2[] {
     return Object.values(tileLongestPath).reduce(
@@ -24,7 +24,7 @@ export class PathAI extends AI {
     );
   }
 
-  public nextLine(entity: Entity): Phaser.Types.Math.Vector2Like[] {
+  public nextLine(entity: Entity<TValueKey>): Phaser.Types.Math.Vector2Like[] {
     const gridSize = entity.getGame().getBoard().getSize();
 
     let tileLongestPath: Record<number, Phaser.Math.Vector2[]> = {};
