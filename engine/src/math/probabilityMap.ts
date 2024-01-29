@@ -4,7 +4,7 @@
  * Example: Given {X: 1, Y: 2, Z: 3} as a map, {@link random} will have the probabilities (X, 1/5), (Y, 2/5), (Z, 3/5).
  */
 export class ProbabilityMap<T> {
-  private map = new Map<T, number>();
+  public constructor(private map = new Map<T, number>()) {}
 
   /**
    * Set the ratio for a {@link key}.

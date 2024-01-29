@@ -3,15 +3,17 @@ import Phaser from "phaser";
 import { Entity } from "./entity";
 
 /**
- * Debug renderer for {@link Entity.config}.
+ * Debug renderer for {@link Entity.values}.
  */
-export class EntityValueRenderer extends Phaser.GameObjects.Container {
-  private entity: Entity;
+export class EntityValueRenderer<
+  TValueKey extends string = string,
+> extends Phaser.GameObjects.Container {
+  private entity: Entity<TValueKey>;
   private text: Phaser.GameObjects.Text;
 
   public constructor(
     scene: Phaser.Scene,
-    entity: Entity,
+    entity: Entity<TValueKey>,
     x: number,
     y: number,
     fill: number,
@@ -21,9 +23,9 @@ export class EntityValueRenderer extends Phaser.GameObjects.Container {
 
     this.entity = entity;
 
-    const config = this.entity.getConfig();
+    const values = this.entity.getValues();
 
-    const values = Object.entries(config).map(
+    const valueTexts = Object.entries(values).map(
       ([key, value]) => `${key}: ${value}`
     );
 
@@ -34,7 +36,7 @@ export class EntityValueRenderer extends Phaser.GameObjects.Container {
       this.scene,
       0,
       0,
-      values.join("    "),
+      valueTexts.join("    "),
       {
         color: `#${colorHex}`,
         font: `bold ${fontSize}px Arial`,
@@ -43,13 +45,13 @@ export class EntityValueRenderer extends Phaser.GameObjects.Container {
     );
     this.add(this.text);
 
-    Object.keys(config).forEach((key, i) => {
+    Object.keys(values).forEach((key, i) => {
       this.entity.onValueChange(
         key as any,
         (value) => {
-          values[i] = `${key}: ${value}`;
+          valueTexts[i] = `${key}: ${value}`;
 
-          this.text.text = values.join("    ");
+          this.text.text = valueTexts.join("    ");
         },
         this
       );

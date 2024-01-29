@@ -4,7 +4,9 @@ import { MAX_HEALTH } from "./config";
 import { SameTypeMatch } from "./match";
 import { TILE_CONFIGS } from "./tile";
 
-export class FightGame extends Game {
+type ValueKey = "health" | "strength" | "defense";
+
+export class FightGame extends Game<ValueKey> {
   public constructor() {
     super();
 
@@ -34,7 +36,7 @@ export class FightGame extends Game {
     this.addEntity(ai);
   }
 
-  protected match(entity: Entity): void {
+  protected match(entity: Entity<ValueKey>): void {
     const board = this.getBoard();
     const line = entity.getLine();
 
@@ -44,11 +46,11 @@ export class FightGame extends Game {
     board.fill();
   }
 
-  public getPlayer(): Entity {
+  public getPlayer(): Entity<ValueKey> {
     return this.getEntity(0)!;
   }
 
-  public getEnemy(): Entity {
+  public getEnemy(): Entity<ValueKey> {
     return this.getEntity(1)!;
   }
 }

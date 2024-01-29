@@ -6,8 +6,10 @@ import { Controller } from "./controller";
 /**
  * Controller for mouse and touch screens.
  */
-export class PointerController extends Controller {
-  public constructor(scene: Phaser.Scene, entity: Entity) {
+export class PointerController<
+  TValueKey extends string = string,
+> extends Controller<TValueKey> {
+  public constructor(scene: Phaser.Scene, entity: Entity<TValueKey>) {
     super(scene, entity);
 
     this.scene.input.on("pointerup", (pointer: Phaser.Input.Pointer) =>

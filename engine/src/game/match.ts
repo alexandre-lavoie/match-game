@@ -6,17 +6,17 @@ import { Game } from "./game";
 /**
  * An abstraction of a rule to define how to combine {@link Tile}s on a {@link Board} using a line and what effects are added if this rule is achieved.
  */
-export abstract class Match {
-  private game: Game;
+export abstract class Match<TValueKey extends string = string> {
+  private game: Game<TValueKey>;
 
-  public constructor(game: Game) {
+  public constructor(game: Game<TValueKey>) {
     this.game = game;
   }
 
   /**
    * Get {@link game}.
    */
-  public getGame(): Game {
+  public getGame(): Game<TValueKey> {
     return this.game;
   }
 
