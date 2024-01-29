@@ -25,11 +25,11 @@ export class PathAI<TValueKey extends string = string> extends AI<TValueKey> {
   }
 
   public nextLine(entity: Entity<TValueKey>): Phaser.Types.Math.Vector2Like[] {
-    const gridSize = entity.getGame().getBoard().getSize();
+    const board = entity.getGame().getBoard();
 
     let tileLongestPath: Record<number, Phaser.Math.Vector2[]> = {};
-    for (let x = 0; x < gridSize.x; x++) {
-      for (let y = 0; y < gridSize.y; y++) {
+    for (let x = 0; x < board.width; x++) {
+      for (let y = 0; y < board.height; y++) {
         const path = this.searchPath(entity, x, y);
         if (path.length === 0) continue;
 

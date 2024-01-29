@@ -20,7 +20,7 @@ export class Entity<TValueKey extends string = string> {
   protected readonly eventEmitter: Phaser.Events.EventEmitter =
     new Phaser.Events.EventEmitter();
 
-  protected game: Game<TValueKey>;
+  protected readonly game: Game<TValueKey>;
 
   /**
    * Map of values.

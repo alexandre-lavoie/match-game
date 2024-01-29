@@ -9,8 +9,8 @@ import { Entity } from "./entity";
 export class EntityLineRenderer<
   TValueKey extends string = string,
 > extends Phaser.GameObjects.Container {
-  private entity: Entity<TValueKey>;
-  private line: PointLine;
+  private readonly entity: Entity<TValueKey>;
+  private readonly line: PointLine;
 
   private fill: number;
   private fontSize: number;
