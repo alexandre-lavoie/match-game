@@ -38,7 +38,7 @@ export class Board<TValueKey extends string = string> {
 
     this.width = width;
     this.height = height ?? width;
-    
+
     this.tiles = this.makeGrid(this.width, this.height);
   }
 
@@ -88,13 +88,13 @@ export class Board<TValueKey extends string = string> {
 
   /**
    * Set tile at {@link x}, {@link y} with a key of {@link key}.
-   * 
+   *
    * @param x coordinate.
    * @param y coordinate.
    * @param key frame index. Null for empty tile.
    */
   public setTile(x: number, y: number, key: number | null): void {
-    this.tiles[x][y] = (key === null) ? null : new Tile(key, x, y);
+    this.tiles[x][y] = key === null ? null : new Tile(key, x, y);
 
     this.eventEmitter.emit("set-tile", x, y);
   }
@@ -106,22 +106,22 @@ export class Board<TValueKey extends string = string> {
    * @param context Context to run function in.
    * @returns This for chaining.
    */
-    public onSetTile(
-      callback: (x: number, y: number) => void,
-      context?: EmitterContext
-    ): this {
-      return this.onWrap("set-tile", callback, context);
-    }
-  
-    /**
-     * Remove {@link onSelect}.
-     */
-    public offSetTile(
-      callback: (x: number, y: number) => void,
-      context?: EmitterContext
-    ): this {
-      return this.offWrap("set-tile", callback, context);
-    }
+  public onSetTile(
+    callback: (x: number, y: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onWrap("set-tile", callback, context);
+  }
+
+  /**
+   * Remove {@link onSelect}.
+   */
+  public offSetTile(
+    callback: (x: number, y: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("set-tile", callback, context);
+  }
 
   /**
    * Select tile at {@link x}, {@link y}.

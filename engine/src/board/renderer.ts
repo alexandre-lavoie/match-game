@@ -160,8 +160,10 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     const tileSize = this.getTileSize();
 
     const boardPoint = new Phaser.Math.Vector2(x - this.x, y - this.y);
-    if (boardPoint.x < 0 || boardPoint.x > this.board.width * tileSize.x) return null;
-    if (boardPoint.y < 0 || boardPoint.y > this.board.height * tileSize.y) return null;
+    if (boardPoint.x < 0 || boardPoint.x > this.board.width * tileSize.x)
+      return null;
+    if (boardPoint.y < 0 || boardPoint.y > this.board.height * tileSize.y)
+      return null;
 
     return new Phaser.Math.Vector2(
       Math.floor(boardPoint.x / tileSize.x),
@@ -188,14 +190,15 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
    */
   protected setTile(x: number, y: number): void {
     const oldTileSprite = this.getTileSprite(x, y);
-    
+
     const newTileSprite = this.makeTileSprite(this.board.getTile(x, y));
     if (newTileSprite) newTileSprite.scale = 0;
 
     this.tileSprites[x][y] = newTileSprite;
-    
+
     const delay = this.animationDelay;
-    this.animationDelay += (oldTileSprite ? 200 : 0) + (newTileSprite ? 200 : 0);
+    this.animationDelay +=
+      (oldTileSprite ? 200 : 0) + (newTileSprite ? 200 : 0);
 
     const newTile = (delay: number) => {
       if (!newTileSprite) return;
@@ -208,9 +211,9 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
         onComplete: () => {
           newTileSprite.scale = 1;
           this.animationDelay -= 200;
-        }
-      })
-    }
+        },
+      });
+    };
 
     if (oldTileSprite) {
       this.scene.tweens.add({
@@ -342,7 +345,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
    * Event listener for {@link match}.
    *
    * You probably want to use {@link Board.onMatch}, unless if you want to know when the animation is complete.
-   * 
+   *
    * @param callback Function to call when a tile is collected.
    * @param context Context to run function in.
    * @returns This for chaining.
