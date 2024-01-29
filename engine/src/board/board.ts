@@ -27,12 +27,19 @@ export class Board<TValueKey extends string = string> {
   protected readonly eventEmitter: Phaser.Events.EventEmitter =
     new Phaser.Events.EventEmitter();
 
-  private game: Game<TValueKey>;
+  private readonly game: Game<TValueKey>;
   private tiles: BoardTile[][];
 
-  public constructor(game: Game<TValueKey>, size: number) {
+  public readonly width: number;
+  public readonly height: number;
+
+  public constructor(game: Game<TValueKey>, width: number, height?: number) {
     this.game = game;
-    this.tiles = this.makeGrid(size);
+
+    this.width = width;
+    this.height = height ?? width;
+    
+    this.tiles = this.makeGrid(this.width, this.height);
   }
 
   /**
@@ -55,8 +62,8 @@ export class Board<TValueKey extends string = string> {
    * @param size x, y size of grid.
    * @returns grid of tiles.
    */
-  private makeGrid(size: number): BoardTile[][] {
-    const grid = new Array(size).fill(0).map((_) => new Array(size).fill(0));
+  private makeGrid(width: number, height: number): BoardTile[][] {
+    const grid = new Array(width).fill(0).map((_) => new Array(height).fill(0));
 
     return grid.map((col, x) => col.map((_, y) => this.makeTile(x, y)));
   }
@@ -80,13 +87,41 @@ export class Board<TValueKey extends string = string> {
   }
 
   /**
-   * Get the width and height of the boar .
-   *
-   * @returns Vector2 where {@link Phaser.Math.Vector2.x} = width and {@link Phaser.Math.Vector2.y} = height.
+   * Set tile at {@link x}, {@link y} with a key of {@link key}.
+   * 
+   * @param x coordinate.
+   * @param y coordinate.
+   * @param key frame index. Null for empty tile.
    */
-  public getSize(): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2(this.tiles.length, this.tiles.length);
+  public setTile(x: number, y: number, key: number | null): void {
+    this.tiles[x][y] = (key === null) ? null : new Tile(key, x, y);
+
+    this.eventEmitter.emit("set-tile", x, y);
   }
+
+  /**
+   * Event listener for {@link select}.
+   *
+   * @param callback Function to call on {@link select}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+    public onSetTile(
+      callback: (x: number, y: number) => void,
+      context?: EmitterContext
+    ): this {
+      return this.onWrap("set-tile", callback, context);
+    }
+  
+    /**
+     * Remove {@link onSelect}.
+     */
+    public offSetTile(
+      callback: (x: number, y: number) => void,
+      context?: EmitterContext
+    ): this {
+      return this.offWrap("set-tile", callback, context);
+    }
 
   /**
    * Select tile at {@link x}, {@link y}.
@@ -184,7 +219,7 @@ export class Board<TValueKey extends string = string> {
       if (my === -1) return;
 
       let i = my;
-      for (let y = my + 1; y < this.tiles.length; y++) {
+      for (let y = my + 1; y < this.height; y++) {
         const tile = this.getTile(x, y);
         if (tile === null) continue;
 
@@ -265,7 +300,7 @@ export class Board<TValueKey extends string = string> {
   public clearLineX(x: number): void {
     const points: [number, number][] = [];
 
-    for (let i = 0; i < this.tiles.length; i++) {
+    for (let i = 0; i < this.height; i++) {
       if (this.tiles[x][i] === null) continue;
 
       this.tiles[x][i] = null;
@@ -283,7 +318,7 @@ export class Board<TValueKey extends string = string> {
   public clearLineY(y: number): void {
     const points: [number, number][] = [];
 
-    for (let i = 0; i < this.tiles.length; i++) {
+    for (let i = 0; i < this.width; i++) {
       if (this.tiles[i][y] === null) continue;
 
       this.tiles[i][y] = null;
@@ -322,8 +357,8 @@ export class Board<TValueKey extends string = string> {
    */
   public fill(): void {
     const newTiles: [number, number][] = [];
-    for (let x = 0; x < this.tiles.length; x++) {
-      for (let y = 0; y < this.tiles.length; y++) {
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.height; y++) {
         if (this.tiles[x][y] !== null) continue;
 
         this.tiles[x][y] = this.makeTile(x, y);
@@ -362,8 +397,8 @@ export class Board<TValueKey extends string = string> {
    * Clear all tiles and replace with new tiles.
    */
   public reset(): void {
-    for (let x = 0; x < this.tiles.length; x++) {
-      for (let y = 0; y < this.tiles.length; y++) {
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.height; y++) {
         this.tiles[x][y] = this.makeTile(x, y);
       }
     }

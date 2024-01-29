@@ -14,6 +14,8 @@ npm install
 npm run dev
 ```
 
+NOTE: Try to stop and rerun command if this fails on the first try.
+
 ### Formatting
 
 ```

@@ -18,9 +18,9 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
   protected readonly eventEmitter: Phaser.Events.EventEmitter =
     new Phaser.Events.EventEmitter();
 
-  protected board: Board<TValueKey>;
+  protected readonly board: Board<TValueKey>;
 
-  protected boardSprite: Phaser.GameObjects.Sprite;
+  protected readonly boardSprite: Phaser.GameObjects.Sprite;
   protected tileSprites: BoardTileSprite[][];
 
   /**
@@ -49,10 +49,9 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     this.attachCallbacks();
 
     this.boardSprite = this.makeBoardSprite();
-    const gridSize = this.board.getSize();
     this.tileSize = new Phaser.Math.Vector2(
-      this.boardSprite.width / gridSize.x,
-      this.boardSprite.height / gridSize.y
+      this.boardSprite.width / this.board.width,
+      this.boardSprite.height / this.board.height
     );
 
     this.tileSprites = this.makeTileSprites();
@@ -60,6 +59,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
 
   private attachCallbacks() {
     this.board
+      .onSetTile(this.setTile, this)
       .onMatch(this.match, this)
       .onSelect(this.select, this)
       .onClear(this.clear, this)
@@ -70,6 +70,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
 
   private removeCallbacks() {
     this.board
+      .offSetTile(this.setTile, this)
       .offMatch(this.match, this)
       .offSelect(this.select, this)
       .offClear(this.clear, this)
@@ -138,9 +139,8 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
    * @returns x, y world coordinate. Null if X or Y indices are out of grid bounds.
    */
   public getGridToWorld(x: number, y: number): Phaser.Math.Vector2 | null {
-    const gridSize = this.board.getSize();
-    if (x < 0 || x >= gridSize.x) return null;
-    if (y < 0 || y >= gridSize.y) return null;
+    if (x < 0 || x >= this.board.width) return null;
+    if (y < 0 || y >= this.board.height) return null;
 
     const tileSize = this.getTileSize();
     return new Phaser.Math.Vector2(
@@ -158,11 +158,10 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
    */
   public getWorldToGrid(x: number, y: number): Phaser.Math.Vector2 | null {
     const tileSize = this.getTileSize();
-    const gridSize = this.board.getSize();
 
     const boardPoint = new Phaser.Math.Vector2(x - this.x, y - this.y);
-    if (boardPoint.x < 0 || boardPoint.x > gridSize.x * tileSize.x) return null;
-    if (boardPoint.y < 0 || boardPoint.y > gridSize.y * tileSize.y) return null;
+    if (boardPoint.x < 0 || boardPoint.x > this.board.width * tileSize.x) return null;
+    if (boardPoint.y < 0 || boardPoint.y > this.board.height * tileSize.y) return null;
 
     return new Phaser.Math.Vector2(
       Math.floor(boardPoint.x / tileSize.x),
@@ -185,6 +184,52 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
   }
 
   /**
+   * Renderer for {@link Board.setTile}.
+   */
+  protected setTile(x: number, y: number): void {
+    const oldTileSprite = this.getTileSprite(x, y);
+    
+    const newTileSprite = this.makeTileSprite(this.board.getTile(x, y));
+    if (newTileSprite) newTileSprite.scale = 0;
+
+    this.tileSprites[x][y] = newTileSprite;
+    
+    const delay = this.animationDelay;
+    this.animationDelay += (oldTileSprite ? 200 : 0) + (newTileSprite ? 200 : 0);
+
+    const newTile = (delay: number) => {
+      if (!newTileSprite) return;
+
+      this.scene.tweens.add({
+        targets: newTileSprite,
+        duration: 200,
+        scale: 1,
+        delay,
+        onComplete: () => {
+          newTileSprite.scale = 1;
+          this.animationDelay -= 200;
+        }
+      })
+    }
+
+    if (oldTileSprite) {
+      this.scene.tweens.add({
+        targets: oldTileSprite,
+        duration: 200,
+        delay,
+        scale: 0,
+        onComplete: () => {
+          newTile(0);
+          oldTileSprite.destroy();
+          this.animationDelay -= 200;
+        },
+      });
+    } else {
+      newTile(delay);
+    }
+  }
+
+  /**
    * Renderer for {@link Board.select}.
    */
   protected select(x: number, y: number, offset: number): void {
@@ -199,7 +244,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
       scale: 1.25,
       yoyo: true,
       onComplete: () => {
-        this.scale = 1;
+        tileSprite.scale = 1;
       },
     });
 
@@ -282,11 +327,41 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
           this.eventEmitter.emit("collect", x, y, i);
         },
         onComplete: () => {
-          if (i === points.length - 1) this.animationDelay -= animationDuration;
+          if (i === points.length - 1) {
+            this.animationDelay -= animationDuration;
+            this.eventEmitter.emit("match", points);
+          }
+
           tileSprite.destroy(false);
         },
       });
     });
+  }
+
+  /**
+   * Event listener for {@link match}.
+   *
+   * You probably want to use {@link Board.onMatch}, unless if you want to know when the animation is complete.
+   * 
+   * @param callback Function to call when a tile is collected.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onMatch(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onWrap("match", callback, context);
+  }
+
+  /**
+   * Remove {@link onMatch}.
+   */
+  public offMatch(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("match", callback, context);
   }
 
   /**

@@ -8,7 +8,7 @@ import { BoardRenderer } from "./renderer";
  */
 export class BoardSound<TValueKey extends string = string> extends Phaser
   .GameObjects.Container {
-  private boardRenderer: BoardRenderer<TValueKey>;
+  private readonly boardRenderer: BoardRenderer<TValueKey>;
 
   public constructor(
     scene: Phaser.Scene,

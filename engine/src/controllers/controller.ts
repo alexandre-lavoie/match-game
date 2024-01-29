@@ -25,7 +25,7 @@ export abstract class Controller<
   /**
    * {@link Entity} attached to this {@link Controller}.
    */
-  protected entity: Entity<TValueKey>;
+  protected readonly entity: Entity<TValueKey>;
 
   public constructor(scene: Phaser.Scene, entity: Entity<TValueKey>) {
     super(scene, "controller");
