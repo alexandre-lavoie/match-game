@@ -22,6 +22,9 @@ export class EndScene extends Phaser.Scene {
   }
 
   public create() {
+    // Reset board for next play.
+    this.matchGame.getBoard().reset();
+
     this.gameOver = this.add.text(0, 0, "Game Over", {
       font: `bold ${FONT_SIZE}px Arial`,
     });

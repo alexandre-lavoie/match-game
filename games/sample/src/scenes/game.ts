@@ -54,7 +54,6 @@ export class GameScene extends Phaser.Scene {
 
     this.matchGame.onEnd(() => {
       this.scene.start("end", { game: this.matchGame });
-      this.matchGame.getBoard().reset();
     });
 
     this.matchGame.start();

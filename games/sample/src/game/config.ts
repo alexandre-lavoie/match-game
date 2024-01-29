@@ -23,9 +23,14 @@ export const WIN_SCORE = 30;
 export const ENTITY_COUNT = 2;
 
 /**
- * Size of NxN {@link Board} in {@link SampleGame}.
+ * Width of {@link Board} in {@link SampleGame}.
  */
-export const GRID_SIZE = 6;
+export const GRID_WIDTH = 6;
+
+/**
+ * Height of {@link Board} in {@link SampleGame}.
+ */
+export const GRID_HEIGHT = 6;
 
 /**
  * Minimum length of line for {@link Match}.

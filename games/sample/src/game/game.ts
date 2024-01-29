@@ -2,7 +2,8 @@ import { Board, Entity, Game, ProbabilityMap } from "match-game";
 
 import {
   ENTITY_COUNT,
-  GRID_SIZE,
+  GRID_HEIGHT,
+  GRID_WIDTH,
   MIN_LINE_LENGTH,
   TILE_CONFIGS,
   WIN_SCORE,
@@ -42,9 +43,9 @@ export class SampleGame extends Game<ValueKey> {
     /**
      * Create the board.
      *
-     * Uses the size {@link GRID_SIZE}.
+     * Uses the size {@link GRID_WIDTH} by {@link GRID_HEIGHT}.
      */
-    this.addBoard(new Board(this, GRID_SIZE));
+    this.addBoard(new Board(this, GRID_WIDTH, GRID_HEIGHT));
 
     /**
      * Create the matching algorithm for the game.
@@ -78,8 +79,15 @@ export class SampleGame extends Game<ValueKey> {
     // Get the line of the successful match.
     const line = entity.getLine();
 
-    this.updateBoard(line);
-    this.updateWin();
+    if (this.updateWin()) {
+      // Match (remove) the tiles of the line from the board.
+      this.board.match(line);
+
+      // Wait for match to be over to change screen.
+      this.boardRenderer.onMatch(this.end, this);
+    } else {
+      this.updateBoard(line);
+    }
   }
 
   private updateBoard(line: Phaser.Geom.Point[]): void {
@@ -87,7 +95,7 @@ export class SampleGame extends Game<ValueKey> {
     this.board.match(line);
 
     // Clear last line.
-    this.board.clearLineY(this.board.getSize().y - 1);
+    this.board.clearLineY(this.board.height - 1);
 
     // Move tiles down.
     this.board.pullDown();
@@ -96,15 +104,15 @@ export class SampleGame extends Game<ValueKey> {
     this.board.fill();
   }
 
-  private updateWin(): void {
+  private updateWin(): boolean {
     for (let entity of this.entities) {
-      if (entity.getValue("score") > WIN_SCORE) {
+      if (entity.getValue("score") >= WIN_SCORE) {
         entity.setValue("win", entity.getValue("win") + 1);
 
-        this.end();
-
-        return;
+        return true;
       }
     }
+
+    return false;
   }
 }
