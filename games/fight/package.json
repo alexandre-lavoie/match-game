@@ -2,7 +2,7 @@
   "name": "fight",
   "private": true,
   "description": "A match fighting game",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "author": "Alexandre Lavoie <alexandre.lavoie00@gmail.com> (https://alexandre-lavoie.github.io/)",
   "organization": "com.example",
