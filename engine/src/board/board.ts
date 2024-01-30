@@ -53,7 +53,7 @@ export class Board<TValueKey extends string = string> {
    * Create a new tile at {@link x}, {@link y}. Determines next tile based of the current game state.
    */
   private makeTile(x: number, y: number): Tile {
-    return new Tile(this.game.getNextTileKey(), x, y);
+    return new Tile(this.game.getNextTileKey(x, y), x, y);
   }
 
   /**
@@ -114,6 +114,20 @@ export class Board<TValueKey extends string = string> {
   }
 
   /**
+   * Once event listener for {@link select}.
+   *
+   * @param callback Function to call on {@link select}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceSetTile(
+    callback: (x: number, y: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("set-tile", callback, context);
+  }
+
+  /**
    * Remove {@link onSelect}.
    */
   public offSetTile(
@@ -146,6 +160,20 @@ export class Board<TValueKey extends string = string> {
     context?: EmitterContext
   ): this {
     return this.onWrap("select", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link select}.
+   *
+   * @param callback Function to call on {@link select}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceSelect(
+    callback: (x: number, y: number, offset: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("select", callback, context);
   }
 
   /**
@@ -189,6 +217,20 @@ export class Board<TValueKey extends string = string> {
     context?: EmitterContext
   ): this {
     return this.onWrap("match", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link match}.
+   *
+   * @param callback Function to call on {@link match}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceMatch(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("match", callback, context);
   }
 
   /**
@@ -283,6 +325,20 @@ export class Board<TValueKey extends string = string> {
   }
 
   /**
+   * Once event listener for {@link pullUp} and {@link pullDown}.
+   *
+   * @param callback Function to call on {@link pullUp} or {@link pullDown}. Provides an array of tuples where [previousX, previousY, nextX, nextY].
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public oncePull(
+    callback: (moves: [number, number, number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("pull", callback, context);
+  }
+
+  /**
    * Remove {@link onPull}.
    */
   public offPull(
@@ -343,6 +399,20 @@ export class Board<TValueKey extends string = string> {
   }
 
   /**
+   * Once event listener for {@link clearLineX} and {@link clearLineY}.
+   *
+   * @param callback Function to call on {@link clearLineX} or {@link clearLineY}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceClear(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("clear", callback, context);
+  }
+
+  /**
    * Remove {@link onClear}.
    */
   public offClear(
@@ -378,9 +448,23 @@ export class Board<TValueKey extends string = string> {
    */
   public onFill(
     callback: (points: [number, number][]) => void,
-    context: EmitterContext
+    context?: EmitterContext
   ): this {
     return this.onWrap("fill", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link fill}
+   *
+   * @param callback Function to call on {@link fill}. Provides an array of x, y coordinates with new tiles.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceFill(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("fill", callback, context);
   }
 
   /**
@@ -388,7 +472,7 @@ export class Board<TValueKey extends string = string> {
    */
   public offFill(
     callback: (points: [number, number][]) => void,
-    context: EmitterContext
+    context?: EmitterContext
   ): this {
     return this.offWrap("fill", callback, context);
   }
@@ -415,9 +499,23 @@ export class Board<TValueKey extends string = string> {
    */
   public onReset(
     callback: (points: [number, number][]) => void,
-    context: EmitterContext
+    context?: EmitterContext
   ): this {
     return this.onWrap("reset", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link reset}
+   *
+   * @param callback Function to call on {@link reset}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceReset(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("reset", callback, context);
   }
 
   /**
@@ -425,7 +523,7 @@ export class Board<TValueKey extends string = string> {
    */
   public offReset(
     callback: (points: [number, number][]) => void,
-    context: EmitterContext
+    context?: EmitterContext
   ): this {
     return this.offWrap("reset", callback, context);
   }
@@ -436,6 +534,16 @@ export class Board<TValueKey extends string = string> {
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private onceWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.once(key, callback, context);
 
     return this;
   }

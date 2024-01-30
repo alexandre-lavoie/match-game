@@ -41,7 +41,9 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     scene: Phaser.Scene,
     board: Board<TValueKey>,
     x: number,
-    y: number
+    y: number,
+    private boardKey: string = "board",
+    private tilesKey: string = "tiles"
   ) {
     super(scene, x, y);
 
@@ -223,7 +225,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
         scale: 0,
         onComplete: () => {
           newTile(0);
-          oldTileSprite.destroy();
+          oldTileSprite.destroy(false);
           this.animationDelay -= 200;
         },
       });
@@ -271,6 +273,22 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
   }
 
   /**
+   * Once event listener for {@link select}.
+   *
+   * You probably want to use {@link Board.onSelect}, unless if you want to know when the animation is complete.
+   *
+   * @param callback Function to call on {@link select}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceSelect(
+    callback: (x: number, y: number, offset: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("select", callback, context);
+  }
+
+  /**
    * Remove {@link onSelect}.
    */
   public offSelect(
@@ -292,6 +310,20 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     context?: EmitterContext
   ): this {
     return this.onWrap("collect", callback, context);
+  }
+
+  /**
+   * Once event listener for when a tile is collected.
+   *
+   * @param callback Function to call when a tile is collected. Provides x, y grid indices and line offset of collected tile.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceCollect(
+    callback: (x: number, y: number, offset: number) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("collect", callback, context);
   }
 
   /**
@@ -355,6 +387,22 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     context?: EmitterContext
   ): this {
     return this.onWrap("match", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link match}.
+   *
+   * You probably want to use {@link Board.onMatch}, unless if you want to know when the animation is complete.
+   *
+   * @param callback Function to call when a tile is collected.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceMatch(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("match", callback, context);
   }
 
   /**
@@ -430,10 +478,55 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
         y: ny * tileSize.y + tileSize.y / 2,
         delay,
         onComplete: () => {
-          if (i === moves.length - 1) this.animationDelay -= animationDuration;
+          if (i === moves.length - 1) {
+            this.animationDelay -= animationDuration;
+            this.eventEmitter.emit("pull", moves);
+          }
         },
       });
     });
+  }
+
+  /**
+   * Event listener for {@link pull}.
+   *
+   * You probably want to use {@link Board.onPull}, unless if you want to know when the animation is complete.
+   *
+   * @param callback Function to call on {@link pull}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onPull(
+    callback: (moves: [number, number, number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onWrap("pull", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link pull}.
+   *
+   * You probably want to use {@link Board.onPull}, unless if you want to know when the animation is complete.
+   *
+   * @param callback Function to call on {@link pull}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public oncePull(
+    callback: (moves: [number, number, number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("pull", callback, context);
+  }
+
+  /**
+   * Remove {@link onPull}.
+   */
+  public offPull(
+    callback: (moves: [number, number, number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("pull", callback, context);
   }
 
   /**
@@ -459,11 +552,56 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
         scale: 1,
         delay,
         onComplete: () => {
-          if (i === points.length - 1) this.animationDelay -= animationDuration;
+          if (i === points.length - 1) {
+            this.animationDelay -= animationDuration;
+            this.eventEmitter.emit("fill", points);
+          }
           tileSprite.scale = 1;
         },
       });
     });
+  }
+
+  /**
+   * Event listener for {@link fill}.
+   *
+   * You probably want to use {@link Board.onFill}, unless if you want to know when the animation is complete.
+   *
+   * @param callback Function to call on {@link fill}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onFill(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onWrap("fill", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link fill}.
+   *
+   * You probably want to use {@link Board.onFill}, unless if you want to know when the animation is complete.
+   *
+   * @param callback Function to call on {@link fill}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceFill(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("fill", callback, context);
+  }
+
+  /**
+   * Remove {@link onFill}.
+   */
+  public offFill(
+    callback: (points: [number, number][]) => void,
+    context?: EmitterContext
+  ): this {
+    return this.offWrap("fill", callback, context);
   }
 
   /**
@@ -475,7 +613,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
         const tileSprite = this.tileSprites[x][y];
 
         this.tileSprites[x][y] = this.makeTileSprite(this.board.getTile(x, y));
-        if (tileSprite) tileSprite.destroy();
+        if (tileSprite) tileSprite.destroy(false);
       }
     }
   }
@@ -484,7 +622,12 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
    * Create the background grid sprite for {@link Board}.
    */
   protected makeBoardSprite(): Phaser.GameObjects.Sprite {
-    const sprite = new Phaser.GameObjects.Sprite(this.scene, 0, 0, "board");
+    const sprite = new Phaser.GameObjects.Sprite(
+      this.scene,
+      0,
+      0,
+      this.boardKey
+    );
     sprite.setOrigin(0);
     this.add(sprite);
 
@@ -502,7 +645,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
       this.scene,
       tile.x * tileSize.x + tileSize.x / 2,
       tile.y * tileSize.y + tileSize.y / 2,
-      "tiles",
+      this.tilesKey,
       tile.key
     );
     this.add(sprite);
@@ -525,6 +668,16 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private onceWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.once(key, callback, context);
 
     return this;
   }

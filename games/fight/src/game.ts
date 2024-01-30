@@ -36,14 +36,19 @@ export class FightGame extends Game<ValueKey> {
     this.addEntity(ai);
   }
 
-  protected match(entity: Entity<ValueKey>): void {
+  protected async match(entity: Entity<ValueKey>): Promise<boolean> {
     const board = this.getBoard();
-    const line = entity.getLine();
+
+    const line = [...entity.getLine()];
 
     board.match(line);
+
     if (entity === this.getPlayer()) board.pullDown();
     else board.pullUp();
+
     board.fill();
+
+    return true;
   }
 
   public getPlayer(): Entity<ValueKey> {
