@@ -227,6 +227,17 @@ export abstract class Game<TValueKey extends string = string> {
   }
 
   /**
+   * Once event listener for {@link start}.
+   *
+   * @param callback Function to call on {@link start}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceStart(callback: () => void, context?: EmitterContext): this {
+    return this.onceWrap("start", callback, context);
+  }
+
+  /**
    * Remove {@link onStart}.
    */
   public offStart(callback: () => void, context?: EmitterContext): this {
@@ -254,6 +265,17 @@ export abstract class Game<TValueKey extends string = string> {
    */
   public onEnd(callback: () => void, context?: EmitterContext): this {
     return this.onWrap("end", callback, context);
+  }
+
+  /**
+   * Once event listener for {@link end}.
+   *
+   * @param callback Function to call on {@link end}.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceEnd(callback: () => void, context?: EmitterContext): this {
+    return this.onceWrap("end", callback, context);
   }
 
   /**
@@ -333,7 +355,7 @@ export abstract class Game<TValueKey extends string = string> {
    *
    * @param _entity with a match.
    */
-  protected abstract match(_entity: Entity<TValueKey>): void;
+  protected abstract match(_entity: Entity<TValueKey>): Promise<boolean>;
 
   /**
    * Handle {@link Controller.match} towards an {@link Entity}.
@@ -341,31 +363,30 @@ export abstract class Game<TValueKey extends string = string> {
    * @param entity with {@link Entity.line} to match.
    * @param x coordinate.
    * @param y coordinate.
-   * @returns if {@link Entity.line} was matched.
    */
-  private controllerMatch(entity: Entity<TValueKey>): boolean {
-    if (!this.interactive) return false;
-    if (this.entities[this.entityIndex] !== entity) return false;
+  private controllerMatch(entity: Entity<TValueKey>): void {
+    if (!this.interactive) return;
+    if (this.entities[this.entityIndex] !== entity) return;
 
     let match = this.getMatch(entity.getLine());
     if (match) {
       match.match(entity);
 
-      this.match(entity);
+      this.match(entity).then((valid) => {
+        if (valid && this.playing) {
+          this.nextEntity();
 
-      if (this.playing) {
-        this.nextEntity();
+          this.eventEmitter.emit(
+            "entity-change",
+            this.entities[this.entityIndex]
+          );
+        }
 
-        this.eventEmitter.emit(
-          "entity-change",
-          this.entities[this.entityIndex]
-        );
-      }
+        entity.clearPoints();
+      });
+    } else {
+      entity.clearPoints();
     }
-
-    entity.clearPoints();
-
-    return true;
   }
 
   /**
@@ -385,6 +406,22 @@ export abstract class Game<TValueKey extends string = string> {
   }
 
   /**
+   * Once event listener for when a new {@link Entity} is play.
+   *
+   * For all intents and purposes, consider this as "onceNextTurn".
+   *
+   * @param callback Function to call on new {@link Entity} is play.
+   * @param context Context to run function in.
+   * @returns This for chaining.
+   */
+  public onceEntityChange(
+    callback: (entity: Entity<TValueKey>) => void,
+    context?: EmitterContext
+  ): this {
+    return this.onceWrap("entity-change", callback, context);
+  }
+
+  /**
    * Remove {@link onEntityChange}.
    */
   public offEntityChange(
@@ -400,6 +437,16 @@ export abstract class Game<TValueKey extends string = string> {
     context?: EmitterContext
   ): this {
     this.eventEmitter.on(key, callback, context);
+
+    return this;
+  }
+
+  private onceWrap<T extends (...args: any[]) => void>(
+    key: string,
+    callback: T,
+    context?: EmitterContext
+  ): this {
+    this.eventEmitter.once(key, callback, context);
 
     return this;
   }

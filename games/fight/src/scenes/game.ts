@@ -1,14 +1,11 @@
 import {
-  AIController,
   BoardRenderer,
   BoardSound,
   EntityLineRenderer,
   EntityValueRenderer,
-  PointerController,
 } from "match-game";
 import Phaser from "phaser";
 
-import { FightAI } from "../ai";
 import { RESIZE_RANGES } from "../config";
 import { FightGame } from "../game";
 
@@ -42,7 +39,7 @@ export abstract class GameScene extends Phaser.Scene {
   protected abstract getBoardPlacement(): Phaser.Math.Vector2;
 
   protected abstract getEnemyFlip(): boolean;
-  protected abstract getEnemyPlacement(): Phaser.Math.Vector2;
+  protected abstract getEnemyPlacement(): Phaser.Math.Vector2 | null;
 
   public preload() {
     this.preloadDevice();
@@ -60,33 +57,12 @@ export abstract class GameScene extends Phaser.Scene {
   }
 
   public create() {
-    this.createControllers();
     this.createVisual(this.scale.width, this.scale.height);
     this.createSound();
 
     this.scale.on("resize", this.resize, this);
-    this.events.on("destroy", () => {
-      this.scale.off("resize", this.resize, this);
-    });
 
     this.matchGame.start();
-  }
-
-  protected createControllers() {
-    const playerController = new PointerController(
-      this,
-      this.matchGame.getPlayer()
-    );
-    this.matchGame.addController(playerController);
-    this.add.existing(playerController);
-
-    const enemyController = new AIController(
-      this,
-      this.matchGame.getEnemy(),
-      new FightAI()
-    );
-    this.matchGame.addController(enemyController);
-    this.add.existing(enemyController);
   }
 
   protected createVisual(width: number, height: number) {
@@ -94,8 +70,8 @@ export abstract class GameScene extends Phaser.Scene {
 
     const enemyPlacement = this.getEnemyPlacement();
     this.enemySprite = this.add.sprite(
-      width * enemyPlacement.x,
-      height * enemyPlacement.y,
+      width * (enemyPlacement?.x ?? -1),
+      height * (enemyPlacement?.y ?? -1),
       `${this.scene.key}-enemy`
     );
     if (this.getEnemyFlip()) this.enemySprite.setFlipX(true);
@@ -147,11 +123,21 @@ export abstract class GameScene extends Phaser.Scene {
     );
     this.add.existing(enemyLine);
 
+    let position = [
+      this.enemySprite.x - this.enemySprite.width / 2,
+      this.enemySprite.y + this.enemySprite.height / 2 + this.getFontSize(),
+    ] as const;
+    if (!enemyPlacement) {
+      position = [
+        this.boardRenderer.x,
+        this.boardRenderer.y - this.getFontSize() * 2,
+      ];
+    }
+
     this.enemyValues = new EntityValueRenderer(
       this,
       this.matchGame.getEnemy(),
-      this.enemySprite.x - this.enemySprite.width / 2,
-      this.enemySprite.y + this.enemySprite.height / 2 + this.getFontSize(),
+      ...position,
       0xffffff,
       this.getFontSize()
     );
@@ -167,27 +153,29 @@ export abstract class GameScene extends Phaser.Scene {
     _gameSize: any,
     { width, height }: { width: number; height: number }
   ) {
-    const scale = width;
+    let newScene = false;
+    for (let [key, [minWidth, minHeight]] of RESIZE_RANGES) {
+      if (this.scale.width >= minWidth && this.scale.height >= minHeight) {
+        if (this.scene.key !== key) {
+          this.scale.off("resize", this.resize, this);
 
-    if (
-      Object.entries(RESIZE_RANGES).some(([key, [l, r]]) => {
-        if (scale >= l && scale < r && this.scene.key !== key) {
           this.scene.start(key, { game: this.matchGame });
 
-          return true;
+          newScene = true;
         }
 
-        return false;
-      })
-    )
-      return;
+        break;
+      }
+    }
+
+    if (newScene) return;
 
     this.backgroundImage.setPosition(width / 2, height / 2);
 
     const enemyPlacement = this.getEnemyPlacement();
     this.enemySprite.setPosition(
-      width * enemyPlacement.x,
-      height * enemyPlacement.y
+      width * (enemyPlacement?.x ?? -1),
+      height * (enemyPlacement?.y ?? -1)
     );
 
     const boardSprite = this.boardRenderer.getBoardSprite();
@@ -202,9 +190,16 @@ export abstract class GameScene extends Phaser.Scene {
       this.boardRenderer.y + boardSprite.height + this.getFontSize()
     );
 
-    this.enemyValues.setPosition(
-      this.enemySprite.x - this.enemySprite.width / 2,
-      this.enemySprite.y + this.enemySprite.height / 2 + this.getFontSize()
-    );
+    if (enemyPlacement) {
+      this.enemyValues.setPosition(
+        this.enemySprite.x - this.enemySprite.width / 2,
+        this.enemySprite.y + this.enemySprite.height / 2 + this.getFontSize()
+      );
+    } else {
+      this.enemyValues.setPosition(
+        this.boardRenderer.x,
+        this.boardRenderer.y - this.getFontSize() * 2
+      );
+    }
   }
 }

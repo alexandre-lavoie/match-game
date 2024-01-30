@@ -1,5 +1,7 @@
+import { AIController, PointerController } from "match-game";
 import Phaser from "phaser";
 
+import { FightAI } from "../ai";
 import { RESIZE_RANGES } from "../config";
 import { FightGame } from "../game";
 
@@ -17,17 +19,26 @@ export class InitScene extends Phaser.Scene {
     // Create an instance of the game.
     const game = new FightGame();
 
+    // Create controllers
+    const playerController = new PointerController(this, game.getPlayer());
+    game.addController(playerController);
+    this.add.existing(playerController);
+
+    const enemyController = new AIController(
+      this,
+      game.getEnemy(),
+      new FightAI()
+    );
+    game.addController(enemyController);
+    this.add.existing(enemyController);
+
     // Start the game scene.
-    const scale = this.scale.width;
+    for (let [key, [minWidth, minHeight]] of RESIZE_RANGES) {
+      if (this.scale.width >= minWidth && this.scale.height >= minHeight) {
+        this.scene.launch(key, { game });
 
-    Object.entries(RESIZE_RANGES).some(([key, [l, r]]) => {
-      if (scale >= l && scale < r && this.scene.key !== key) {
-        this.scene.start(key, { game });
-
-        return true;
+        break;
       }
-
-      return false;
-    });
+    }
   }
 }

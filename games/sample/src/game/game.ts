@@ -75,7 +75,7 @@ export class SampleGame extends Game<ValueKey> {
     super.start();
   }
 
-  protected match(entity: Entity<ValueKey>): void {
+  protected async match(entity: Entity<ValueKey>): Promise<boolean> {
     // Get the line of the successful match.
     const line = entity.getLine();
 
@@ -88,6 +88,8 @@ export class SampleGame extends Game<ValueKey> {
     } else {
       this.updateBoard(line);
     }
+
+    return true;
   }
 
   private updateBoard(line: Phaser.Geom.Point[]): void {

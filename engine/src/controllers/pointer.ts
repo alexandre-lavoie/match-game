@@ -12,17 +12,17 @@ export class PointerController<
   public constructor(scene: Phaser.Scene, entity: Entity<TValueKey>) {
     super(scene, entity);
 
-    this.scene.input.on("pointerup", (pointer: Phaser.Input.Pointer) =>
-      this.dragFinish(pointer.worldX, pointer.worldY)
-    );
-    this.scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) =>
-      this.dragStart(pointer.worldX, pointer.worldY)
-    );
-    this.scene.input.on(
-      "pointermove",
-      (pointer: Phaser.Input.Pointer) =>
-        pointer.isDown && this.dragUpdate(pointer.worldX, pointer.worldY)
-    );
+    this.scene.input.on("pointerdown", this.dragStart, this);
+    this.scene.input.on("pointermove", this.dragMove, this);
+    this.scene.input.on("pointerup", this.dragFinish, this);
+  }
+
+  public destroy(fromScene?: boolean | undefined): void {
+    this.scene.input.off("pointerdown", this.dragStart, this);
+    this.scene.input.off("pointermove", this.dragMove, this);
+    this.scene.input.off("pointerup", this.dragFinish, this);
+
+    super.destroy(fromScene);
   }
 
   /**
@@ -32,8 +32,31 @@ export class PointerController<
    * @param y coordinate.
    * @returns If update was successful.
    */
-  private dragStart(x: number, y: number): boolean {
-    return this.dragUpdate(x, y, false);
+  private dragStart(pointer: Phaser.Input.Pointer): boolean {
+    return this.dragUpdate(pointer, false);
+  }
+
+  /**
+   * Move a drag.
+   */
+  private dragMove(pointer: Phaser.Input.Pointer): boolean {
+    if (!pointer.isDown) return false;
+
+    return this.dragUpdate(pointer);
+  }
+
+  /**
+   * End a drag and match.
+   *
+   * @param x coordinate.
+   * @param y coordinate.
+   */
+  private dragFinish(pointer: Phaser.Input.Pointer): boolean {
+    this.dragUpdate(pointer, false);
+
+    this.match();
+
+    return true;
   }
 
   /**
@@ -46,39 +69,29 @@ export class PointerController<
    * @returns If update was successful.
    */
   private dragUpdate(
-    x: number,
-    y: number,
+    pointer: Phaser.Input.Pointer,
     checkSelectRange: boolean = true
   ): boolean {
     const boardRenderer = this.entity.getGame().getBoardRenderer();
 
-    const tile = boardRenderer.getTileWorld(x, y);
+    const tile = boardRenderer.getTileWorld(pointer.worldX, pointer.worldY);
     if (tile === null) return false;
 
     if (checkSelectRange) {
       const tileSize = boardRenderer.getTileSize();
-      const tilePosition = boardRenderer.alignToGrid(x, y);
+      const tilePosition = boardRenderer.alignToGrid(
+        pointer.worldX,
+        pointer.worldY
+      );
       if (tilePosition === null) return false;
 
-      if (Math.abs(x - tilePosition.x) > tileSize.x / 3) return false;
-      if (Math.abs(y - tilePosition.y) > tileSize.y / 3) return false;
+      if (Math.abs(pointer.worldX - tilePosition.x) > tileSize.x / 3)
+        return false;
+      if (Math.abs(pointer.worldY - tilePosition.y) > tileSize.y / 3)
+        return false;
     }
 
     this.select(tile.x, tile.y);
-
-    return true;
-  }
-
-  /**
-   * End a drag and match.
-   *
-   * @param x coordinate.
-   * @param y coordinate.
-   */
-  private dragFinish(x: number, y: number): boolean {
-    this.dragUpdate(x, y, false);
-
-    this.match();
 
     return true;
   }
