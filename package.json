@@ -2,7 +2,8 @@
   "name": "match-game-workspace",
   "workspaces": [
     "engine",
-    "games/*"
+    "games/*",
+    "pack"
   ],
   "scripts": {
     "dev": "concurrently --raw --handle-input \"npm:dev:engine\" \"npm:dev:game\"",
@@ -11,6 +12,10 @@
     "build:engine": "npm run build -w engine",
     "dev:game": "npm run dev -w games/sample",
     "build:game": "npm run build -w games/sample",
+    "package:android": "npm run package:android -w pack -- --workspace --path games/sample",
+    "package:linux": "npm run package:linux -w pack -- --workspace --path games/sample",
+    "package:web": "npm run package:web -w pack -- --workspace --path games/sample",
+    "package:windows": "npm run package:windows -w pack -- --workspace --path games/sample",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
