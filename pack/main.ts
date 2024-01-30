@@ -1,6 +1,7 @@
 import AdmZip from "adm-zip";
+// @ts-ignore
+import { cli as cordovaCli } from "cordova";
 import { XMLBuilder } from "fast-xml-parser";
-import child_process from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { hideBin } from "yargs/helpers";
@@ -31,18 +32,17 @@ interface ConfigXML {
   platform: "android" | "ios" | "electron";
 }
 
-function cordova(...args: string[]): string | null {
-  const res = child_process.spawnSync("cordova", args, { cwd: __dirname });
+async function cordova(...args: string[]): Promise<boolean> {
+  try {
+    await cordovaCli(["node", "cordova", ...args]);
+  } catch (e) {
+    return false;
+  }
 
-  return res.error
-    ? null
-    : (res.output as Buffer[])
-        .filter((value) => value)
-        .map((buffer: Buffer) => buffer.toString("utf-8"))
-        .join("\n");
+  return true;
 }
 
-function copyWWW(dir: string): boolean {
+async function copyWWW(dir: string): Promise<boolean> {
   const distPath = path.join(dir, "dist");
   if (!fs.existsSync(dir)) return false;
 
@@ -55,13 +55,13 @@ function copyWWW(dir: string): boolean {
   return true;
 }
 
-function makeConfigXMLPlatform(
+async function makeConfigXMLPlatform(
   platform: ConfigXML["platform"],
   icon?: string
-): Record<string, any> {
+): Promise<Record<string, any>> {
   let resIcon: string | undefined = undefined;
   if (icon) {
-    resIcon = path.join("res", platform, path.basename(icon));
+    resIcon = `res/${platform}/${path.basename(icon)}`;
   }
 
   switch (platform) {
@@ -93,7 +93,7 @@ function makeConfigXMLPlatform(
   }
 }
 
-function makeConfigXML({
+async function makeConfigXML({
   name,
   description,
   organization,
@@ -101,10 +101,10 @@ function makeConfigXML({
   author,
   icon,
   platform,
-}: ConfigXML): string {
+}: ConfigXML): Promise<string> {
   const builder = new XMLBuilder({ ignoreAttributes: false });
 
-  let xml: string = builder.build({
+  const jsObj = {
     "?xml": { "@_version": "1.0", "@_encoding": "utf-8" },
     "@_id": `${organization}.${name}`,
     "@_version": version,
@@ -119,15 +119,13 @@ function makeConfigXML({
       content: {
         "@_src": "index.html",
       },
-      platform: makeConfigXMLPlatform(platform, icon),
+      platform: await makeConfigXMLPlatform(platform, icon),
     },
     "@_xmlns": "http://www.w3.org/ns/widgets",
     "@_xmlns:cdv": "http://cordova.apache.org/ns/1.0",
-  });
+  };
 
-  xml = xml.replace(new RegExp("></icon>", "g"), "/>");
-
-  return xml;
+  return builder.build(jsObj);
 }
 
 const DEFAULT_PERSON: Person = {
@@ -140,7 +138,7 @@ const PERSON_NAME_REGEX = /(.+?)\s(\<|\()/g;
 const PERSON_EMAIL_REGEX = /\<(.+?)\>/g;
 const PERSON_URL_REGEX = /\((.+?)\)/g;
 
-function parsePerson(data: PackageJSON["author"]): Person {
+async function parsePerson(data: PackageJSON["author"]): Promise<Person> {
   if (data === null || data === undefined) return DEFAULT_PERSON;
 
   if (typeof data === "string") {
@@ -165,7 +163,7 @@ function parsePerson(data: PackageJSON["author"]): Person {
   }
 }
 
-function loadPackageJSON(dir: string): PackageJSON | null {
+async function loadPackageJSON(dir: string): Promise<PackageJSON | null> {
   const jsonPath = path.join(dir, "package.json");
   if (!fs.existsSync(jsonPath)) return null;
 
@@ -174,11 +172,11 @@ function loadPackageJSON(dir: string): PackageJSON | null {
   return data;
 }
 
-function makeConfigFromPackage(
+async function makeConfigFromPackage(
   dir: string,
   pkg: PackageJSON,
   platform: ConfigXML["platform"]
-): ConfigXML {
+): Promise<ConfigXML> {
   let icon: string | undefined = pkg.icon;
 
   if (icon && !path.isAbsolute(icon)) icon = path.join(dir, icon);
@@ -188,14 +186,14 @@ function makeConfigFromPackage(
     name: pkg.name ?? "game",
     description: pkg.description ?? "Description",
     version: pkg.version ?? "0.0.0",
-    author: parsePerson(pkg.author),
+    author: await parsePerson(pkg.author),
     organization: pkg.organization ?? "com.example",
     icon,
     platform,
   };
 }
 
-function writeConfigXML(config: ConfigXML): boolean {
+async function writeConfigXML(config: ConfigXML): Promise<boolean> {
   const configPath = path.join(__dirname, "config.xml");
 
   if (config.icon) {
@@ -209,13 +207,13 @@ function writeConfigXML(config: ConfigXML): boolean {
     );
   }
 
-  const xml = makeConfigXML(config);
+  const xml = await makeConfigXML(config);
   fs.writeFileSync(configPath, xml);
 
   return true;
 }
 
-function writeElectronSettingsJSON(): boolean {
+async function writeElectronSettingsJSON(): Promise<boolean> {
   const electronPath = path.join(__dirname, "res", "electron");
   if (!fs.existsSync(electronPath))
     fs.mkdirSync(electronPath, { recursive: true });
@@ -237,7 +235,7 @@ function writeElectronSettingsJSON(): boolean {
   return true;
 }
 
-function writeBuildJSON(data: Record<string, any>): boolean {
+async function writeBuildJSON(data: Record<string, any>): Promise<boolean> {
   const buildPath = path.join(__dirname, "build.json");
 
   fs.writeFileSync(buildPath, JSON.stringify(data));
@@ -245,37 +243,36 @@ function writeBuildJSON(data: Record<string, any>): boolean {
   return true;
 }
 
-function packageElectron(
+async function packageElectron(
   dir: string,
   pkg: PackageJSON,
   build: Record<string, any>,
   release: boolean = true
-): boolean {
-  if (!copyWWW(dir)) return false;
+): Promise<boolean> {
+  if (!(await copyWWW(dir))) return false;
 
-  const config = makeConfigFromPackage(dir, pkg, "electron");
+  const config = await makeConfigFromPackage(dir, pkg, "electron");
   if (!config) return false;
 
-  if (!writeConfigXML(config)) return false;
+  if (!(await writeConfigXML(config))) return false;
 
-  if (!writeBuildJSON(build)) return false;
+  if (!(await writeBuildJSON(build))) return false;
 
-  if (!writeElectronSettingsJSON()) return false;
+  if (!(await writeElectronSettingsJSON())) return false;
 
-  cordova("platform", "add", "electron");
+  if (!fs.existsSync(path.join(__dirname, "platforms", "electron")))
+    await cordova("platform", "add", "electron");
 
-  const status = cordova(
-    "build",
-    "electron",
-    release ? "--release" : "--debug"
-  );
-  if (status === undefined) return false;
-  console.log(status);
+  if (!(await cordova("build", "electron", release ? "--release" : "--debug")))
+    return false;
 
   return true;
 }
 
-function copyElectronBuild(fileName: string, platform: string): boolean {
+async function copyElectronBuild(
+  fileName: string,
+  platform: string
+): Promise<boolean> {
   const filePath = path.join(
     __dirname,
     "platforms",
@@ -296,29 +293,34 @@ function copyElectronBuild(fileName: string, platform: string): boolean {
   return true;
 }
 
-function packageAndroid(dir: string, release: boolean = true): boolean {
-  if (!copyWWW(dir)) return false;
+async function packageAndroid(
+  dir: string,
+  release: boolean = true
+): Promise<boolean> {
+  if (!(await copyWWW(dir))) return false;
 
-  const pkg = loadPackageJSON(dir);
+  const pkg = await loadPackageJSON(dir);
   if (!pkg) return false;
 
-  const config = makeConfigFromPackage(dir, pkg, "android");
+  const config = await makeConfigFromPackage(dir, pkg, "android");
   if (!config) return false;
 
-  if (!writeConfigXML(config)) return false;
+  if (!(await writeConfigXML(config))) return false;
 
-  cordova("platform", "rm", "android");
-  cordova("platform", "add", "android");
+  await cordova("platform", "rm", "android");
+  await cordova("platform", "add", "android");
 
-  const status = cordova("build", "android", release ? "--release" : "--debug");
-  if (status === undefined) return false;
-  console.log(status);
+  if (!(await cordova("build", "android", release ? "--release" : "--debug")))
+    return false;
 
   return true;
 }
 
-function packageLinux(dir: string, release: boolean = true): boolean {
-  const pkg = loadPackageJSON(dir);
+async function packageLinux(
+  dir: string,
+  release: boolean = true
+): Promise<boolean> {
+  const pkg = await loadPackageJSON(dir);
   if (!pkg) return false;
 
   const build = {
@@ -329,13 +331,19 @@ function packageLinux(dir: string, release: boolean = true): boolean {
       },
     },
   };
-  if (!packageElectron(dir, pkg, build, release)) return false;
+  if (!(await packageElectron(dir, pkg, build, release))) return false;
 
-  return copyElectronBuild(`${pkg.name}-${pkg.version}.AppImage`, "linux");
+  return await copyElectronBuild(
+    `${pkg.name}-${pkg.version}.AppImage`,
+    "linux"
+  );
 }
 
-function packageWeb(dir: string, _release: boolean = true): boolean {
-  const pkg = loadPackageJSON(dir);
+async function packageWeb(
+  dir: string,
+  _release: boolean = true
+): Promise<boolean> {
+  const pkg = await loadPackageJSON(dir);
   if (!pkg) return false;
 
   const distPath = path.join(dir, "dist");
@@ -353,8 +361,11 @@ function packageWeb(dir: string, _release: boolean = true): boolean {
   return true;
 }
 
-function packageWindows(dir: string, release: boolean = true): boolean {
-  const pkg = loadPackageJSON(dir);
+async function packageWindows(
+  dir: string,
+  release: boolean = true
+): Promise<boolean> {
+  const pkg = await loadPackageJSON(dir);
   if (!pkg) return false;
 
   const build = {
@@ -364,12 +375,12 @@ function packageWindows(dir: string, release: boolean = true): boolean {
       },
     },
   };
-  if (!packageElectron(dir, pkg, build, release)) return false;
+  if (!(await packageElectron(dir, pkg, build, release))) return false;
 
-  return copyElectronBuild(`${pkg.name} ${pkg.version}.exe`, "windows");
+  return await copyElectronBuild(`${pkg.name} ${pkg.version}.exe`, "windows");
 }
 
-function cli(): boolean {
+async function cli(): Promise<boolean> {
   const argv = yargs(hideBin(process.argv))
     .option("platform", {
       type: "string",
@@ -416,11 +427,11 @@ function cli(): boolean {
     windows: packageWindows,
   };
 
-  return packagePlatform[argv.platform](...args);
+  return await packagePlatform[argv.platform](...args);
 }
 
 if (typeof require !== "undefined" && require.main === module) {
-  const status = cli();
-
-  if (!status) process.exitCode = 1;
+  cli().then((status) => {
+    if (!status) process.exitCode = 1;
+  });
 }

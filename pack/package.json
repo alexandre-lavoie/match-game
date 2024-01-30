@@ -2,10 +2,11 @@
   "name": "pack",
   "version": "0.0.0",
   "scripts": {
-    "package:android": "ts-node main.ts --platform android",
-    "package:linux": "ts-node main.ts --platform linux",
-    "package:web": "ts-node main.ts --platform web",
-    "package:windows": "ts-node main.ts --platform windows"
+    "pack": "ts-node main.ts",
+    "package:android": "npm run pack -- --platform android",
+    "package:linux": "npm run pack -- --platform linux",
+    "package:web": "npm run pack -- --platform web",
+    "package:windows": "npm run pack -- --platform windows"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
