@@ -13,7 +13,6 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -23,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+pack/platforms
+pack/res/
+pack/www/
+pack/build.json
+pack/config.xml

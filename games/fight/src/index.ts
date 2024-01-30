@@ -11,8 +11,8 @@ const GameScene =
 
 document.addEventListener("DOMContentLoaded", () => {
   new Phaser.Game({
-    title: "Match Game",
-    type: Phaser.CANVAS,
+    title: "Fight Game",
+    type: Phaser.AUTO,
     scene: [GameScene],
     scale: {
       width: window.innerWidth,

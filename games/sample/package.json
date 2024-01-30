@@ -1,8 +1,12 @@
 {
   "name": "sample",
+  "description": "Sample game",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
+  "author": "John Doe <john.doe@example.com> (https://example.com)",
+  "organization": "com.example",
+  "icon": "public/icon.png",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
