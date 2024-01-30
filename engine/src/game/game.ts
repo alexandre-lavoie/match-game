@@ -155,11 +155,13 @@ export abstract class Game<TValueKey extends string = string> {
   /**
    * Get next tile ID to generate.
    *
+   * {@link x}, {@link y} coordinates of tile are provided for convenience.
+   *
    * DO OVERRIDE to implement your own tile creation logic.
    *
    * @returns Next tile to generate.
    */
-  public getNextTileKey(): number {
+  public getNextTileKey(_x: number, _y: number): number {
     return this.tileProbability.random();
   }
 

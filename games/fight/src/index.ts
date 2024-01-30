@@ -1,22 +1,20 @@
 import Phaser from "phaser";
 
-import { DesktopGameScene } from "./scenes/game/desktop";
-import { MobileGameScene } from "./scenes/game/mobile";
+import { InitScene } from "./scenes/init";
+import { LargeGameScene } from "./scenes/views/large";
+import { MediumGameScene } from "./scenes/views/medium";
+import { SmallGameScene } from "./scenes/views/small";
 import "./style.css";
-
-const GameScene =
-  Math.min(window.innerWidth, window.innerHeight) < 800
-    ? MobileGameScene
-    : DesktopGameScene;
 
 document.addEventListener("DOMContentLoaded", () => {
   new Phaser.Game({
     title: "Fight Game",
     type: Phaser.AUTO,
-    scene: [GameScene],
+    scene: [InitScene, SmallGameScene, MediumGameScene, LargeGameScene],
     scale: {
-      width: window.innerWidth,
-      height: window.innerHeight,
+      mode: Phaser.Scale.RESIZE,
+      width: "100%",
+      height: "100%",
     },
     backgroundColor: "#000000",
   });

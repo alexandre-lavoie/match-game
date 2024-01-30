@@ -53,7 +53,7 @@ export class Board<TValueKey extends string = string> {
    * Create a new tile at {@link x}, {@link y}. Determines next tile based of the current game state.
    */
   private makeTile(x: number, y: number): Tile {
-    return new Tile(this.game.getNextTileKey(), x, y);
+    return new Tile(this.game.getNextTileKey(x, y), x, y);
   }
 
   /**

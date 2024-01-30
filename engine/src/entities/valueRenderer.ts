@@ -11,6 +11,8 @@ export class EntityValueRenderer<
   private entity: Entity<TValueKey>;
   private text: Phaser.GameObjects.Text;
 
+  private readonly handlers: [string, (value: number) => void][];
+
   public constructor(
     scene: Phaser.Scene,
     entity: Entity<TValueKey>,
@@ -45,16 +47,24 @@ export class EntityValueRenderer<
     );
     this.add(this.text);
 
-    Object.keys(values).forEach((key, i) => {
-      this.entity.onValueChange(
-        key as any,
-        (value) => {
-          valueTexts[i] = `${key}: ${value}`;
+    this.handlers = Object.keys(values).map((key, i) => {
+      const handler = (value: number) => {
+        valueTexts[i] = `${key}: ${value}`;
 
-          this.text.text = valueTexts.join("    ");
-        },
-        this
-      );
+        this.text.text = valueTexts.join("    ");
+      };
+
+      this.entity.onValueChange(key as any, handler);
+
+      return [key, handler] as const;
     });
+  }
+
+  public destroy(fromScene?: boolean | undefined): void {
+    this.handlers.forEach(([key, handler]) => {
+      this.entity.offValueChange(key as any, handler);
+    });
+
+    super.destroy(fromScene);
   }
 }

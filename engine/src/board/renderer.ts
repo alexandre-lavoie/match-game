@@ -41,7 +41,9 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
     scene: Phaser.Scene,
     board: Board<TValueKey>,
     x: number,
-    y: number
+    y: number,
+    private boardKey: string = "board",
+    private tilesKey: string = "tiles"
   ) {
     super(scene, x, y);
 
@@ -484,7 +486,12 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
    * Create the background grid sprite for {@link Board}.
    */
   protected makeBoardSprite(): Phaser.GameObjects.Sprite {
-    const sprite = new Phaser.GameObjects.Sprite(this.scene, 0, 0, "board");
+    const sprite = new Phaser.GameObjects.Sprite(
+      this.scene,
+      0,
+      0,
+      this.boardKey
+    );
     sprite.setOrigin(0);
     this.add(sprite);
 
@@ -502,7 +509,7 @@ export class BoardRenderer<TValueKey extends string = string> extends Phaser
       this.scene,
       tile.x * tileSize.x + tileSize.x / 2,
       tile.y * tileSize.y + tileSize.y / 2,
-      "tiles",
+      this.tilesKey,
       tile.key
     );
     this.add(sprite);

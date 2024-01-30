@@ -65,7 +65,7 @@ export class Entity<TValueKey extends string = string> {
    */
   public setValue(key: TValueKey, value: number): void {
     this.values[key] = value;
-    this.eventEmitter.emit("valueChange", key, value);
+    this.eventEmitter.emit(`valueChange-${key}`, value);
   }
 
   /**
@@ -81,22 +81,15 @@ export class Entity<TValueKey extends string = string> {
     callback: (value: number) => void,
     context?: EmitterContext
   ): this {
-    return this.onWrap(
-      "valueChange",
-      (otherKey: TValueKey, value: number) =>
-        key === otherKey && callback(value),
-      context
-    );
+    return this.onWrap(`valueChange-${key}`, callback, context);
   }
 
   public offValueChange(
-    _key: TValueKey,
-    _callback: (value: number) => void,
-    _context?: EmitterContext
+    key: TValueKey,
+    callback: (value: number) => void,
+    context?: EmitterContext
   ): this {
-    // TODO: Change onValueChange or figure a way to do this.
-
-    return this;
+    return this.offWrap(`valueChange-${key}`, callback, context);
   }
 
   /**
